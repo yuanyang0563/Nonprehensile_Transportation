@@ -1,7 +1,10 @@
 The continuous-time equations of motion of the manipulator's end-effector frame are known by
 
 $$
-\dot{\mathbf{x}}=\bf{\upsilon}\textrm{,}\\
+\dot{\mathbf{x}}=\bf{\upsilon}\textrm{,}
+$$
+
+$$
 \dot{\mathbf{R}}=\mathbf{R}\bf{\omega}^\times\textrm{,}
 $$
 
