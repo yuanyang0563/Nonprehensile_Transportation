@@ -1,7 +1,8 @@
 The continuous-time equations of motion of the manipulator's end-effector frame are known by
 
 $$
-E = mc^2
+\dot{\mathbf{x}}=&\bm{\upsilon}\textrm{,}\\
+\dot{\mathbf{R}}=&\fbm{R}\bm{\omega}^\times\textrm{,}
 $$
 
 where $\fbm{x}$ is the position vector, $\fbm{R}$ is the rotation matrix representation of the orientation, $\bm{\upsilon}$ is the linear spatial velocity, and $\bm{\omega}$ is the angular body velocity.
