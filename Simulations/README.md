@@ -7,7 +7,7 @@ $$
 \end{align*} 
 $$
 
-where $\fbm{x}$ is the position vector, $\mathbf{R}$ is the rotation matrix representation of the orientation, $\mathbf{\upsilon}$ is the linear spatial velocity, and $\bmathbf{\omega}$ is the angular body velocity.
+where $\fbm{x}$ is the position vector, $\mathbf{R}$ is the rotation matrix representation of the orientation, $\mathbf{\upsilon}$ is the linear spatial velocity, and $\mathbf{\omega}$ is the angular body velocity.
 
 Let $\Delta T$ be the sampling time period. Then, in discrete time, the equations of motion of the manipulator's end-effector frame can be expressed as
 
