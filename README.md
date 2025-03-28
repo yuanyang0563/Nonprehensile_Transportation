@@ -1,4 +1,4 @@
-# nonprehensile_transportation
+# Nonprehensile_Transportation
 
 ## Project Overview
 
