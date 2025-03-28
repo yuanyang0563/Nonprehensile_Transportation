@@ -10,7 +10,7 @@ This project implements model predictive control algorithms for a single-arm sys
 
 The proposed control algorithms are computationally efficient.
 
-Only 7 ms on average are spent in solving the formulated optimization problems per round.
+In sumulations, only 7 ms on average are spent in solving the formulated optimization problems per round.
 
 ## Installation
 
