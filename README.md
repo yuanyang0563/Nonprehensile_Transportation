@@ -12,7 +12,7 @@ The proposed control algorithms are computationally efficient.
 
 The length of the prediction horizon is set to $N=5$.
 
-In sumulations, only $7 ms$ on average are spent in solving the formulated optimization problems per round. Check it!
+In sumulations, only $7~ms$ on average are spent in solving the formulated optimization problems per round. Check it!
 
 ## Installation
 
