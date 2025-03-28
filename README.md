@@ -6,6 +6,8 @@ This project implements model predictive control algorithms for a single-arm sys
 
 The principles of the model predictive control algorithms are explained here: [ Enjoy it! ](https://www.overleaf.com/read/svsbmbmrbbzt#efa959).
 
+<a href="https://github.com" target="_blank">Go to GitHub</a>
+
 ## Features
 
 The proposed control algorithms are computationally efficient.
