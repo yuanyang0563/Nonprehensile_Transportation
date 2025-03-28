@@ -18,8 +18,8 @@ In sumulations, only $7~ms$ on average are spent in solving the formulated optim
 
 ## Installation
 
-Installed Gurobi 12.0. Check ~/.bashrc and export environment variables *GUROBI_HOME*, *PATH* and *LD_LIBRARY_PATH* correctly.
+Installed **Gurobi 12.0**. Check ~/.bashrc and export environment variables **GUROBI_HOME**, **PATH** and **LD_LIBRARY_PATH** correctly.
 
-Install the cppzmq package for the program to interface with the CoppeliaSim via the ZeroMQ remote API.
+Install the **cppzmq** package for the program to interface with the CoppeliaSim via the ZeroMQ remote API.
 
 ## Usage
