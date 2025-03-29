@@ -26,3 +26,6 @@ target_link_libraries(mpc_1arm RemoteAPIClient optimized ${GUROBI_CXX_LIBRARY} $
 
 add_executable(mpc_2arms src/mpc_2arms.cpp src/common.cpp)
 target_link_libraries(mpc_2arms RemoteAPIClient optimized ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
+
+add_executable(pid_2arms src/pid_2arms.cpp src/common.cpp)
+target_link_libraries(pid_2arms RemoteAPIClient)
