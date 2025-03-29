@@ -11,7 +11,7 @@ double m = 0.5;
 double I1 = 0.1;
 double I2 = 0.1;
 double I3 = 0.1;
-double mu = 0.01;
+double mu = 0.1;
 
 DiagonalMatrix<double, 3> I;
 
@@ -28,12 +28,12 @@ double vt = 1.0;
 double vr = 1.0;
 double fc = 1e5;
 double epsilon = 0.01;
-double kappa_u = 1.5;
-double alpha_u = 500.0;
-double kappa_o = 1.0;
-double alpha_o = 150.0;
-double rho_u = 1.0;
-double rho_o = 10.0;
+double kappa_u = 3.0;
+double alpha_u = 300.0;
+double kappa_o = 0.1;
+double alpha_o = 30.0;
+double rho_u = 3.0;
+double rho_o = 1.0;
 
 void init () {
   I.diagonal() << I1, I2, I3;

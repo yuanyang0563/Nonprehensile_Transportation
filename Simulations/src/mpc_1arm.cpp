@@ -11,11 +11,16 @@ int main(int argc, char *argv[])
 {
 	init();
 	manipulator arm;
+	// set DH parameters
+	arm.a << 0.0, -0.24365, -0.21325, 0.0, 0.0, 0.0;
+	arm.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
+	arm.d << 0.1519, 0.0, 0.0, 0.11235, 0.08535, 0.0819;
 	// set the initial joint coordinates
 	arm.q << -M_PI/4.0, -2.0*M_PI/3.0, -M_PI/4.0, -7.0*M_PI/12.0, M_PI/2.0, -M_PI/4.0;
 	arm.xeo << 0.0, -0.125, 0.025;
 	arm.Reo << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0;
-	arm.base << 0.0, 0.0, 0.0;
+	arm.xb << 0.0, 0.0, 0.0;
+	arm.Rb << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
 	arm.xd << 0.4, 0.25, 0.20;
 	arm.Rd << 0.0, -1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0;
 	// initialize the remote API to interface with CoppeliaSim
