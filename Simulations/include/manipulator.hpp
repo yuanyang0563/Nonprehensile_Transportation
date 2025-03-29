@@ -7,14 +7,19 @@ class manipulator {
 
   public:
   
-	VectorXd q, dq, bu_d, bo_d, eta, lambda, h;
-	Vector3d base, upsilon, omega;
-	Vector3d x, xeo, xd;
-	Matrix3d R, Reo, Rd;
+  	VectorXd a, alpha, d;
+	VectorXd q, dq;
+	VectorXd bu_d, bo_d, eta, lambda, h;
 	MatrixXd J, Au_d, Ao_d, Hu, Ho, Hf;
+	Vector3d upsilon, omega;
+	Vector3d x, xb, xeo, xd;
+	Matrix3d R, Rb, Reo, Rd;
 	int jointHandles[6];
 	
 	manipulator() {
+		a = VectorXd(6);
+		alpha = VectorXd(6);
+		d = VectorXd(6);
 		q = VectorXd(6);
 		dq = VectorXd(6);
 		upsilon.setZero();
@@ -33,10 +38,6 @@ class manipulator {
 	}
 
 	void get_pose_jacobian () {
-		MatrixXd a(6,1), alpha(6,1), d(6,1);
-		a << 0.0, -0.24365, -0.21325, 0.0, 0.0, 0.0;
-		alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
-		d << 0.1519, 0.0, 0.0, 0.11235, 0.08535, 0.0819;
 		Matrix4d A;
 		MatrixXd T = Matrix4d::Identity();
 		Matrix<double, 3, 7> o, z;
@@ -51,10 +52,10 @@ class manipulator {
 			o.col(i+1) << T.block(0,3,3,1);
 			z.col(i+1) << T.block(0,2,3,1);
 		}
-		x = T.block(0,3,3,1)+base;
-		R = T.block(0,0,3,3);
+		x = Rb*T.block(0,3,3,1)+xb;
+		R = Rb*T.block(0,0,3,3);
 		for (int i=0; i<6; ++i)
-			J.col(i)<< z.col(i).cross(o.col(6)-o.col(i)), R.transpose()*z.col(i);
+			J.col(i)<< Rb*z.col(i).cross(o.col(6)-o.col(i)), R.transpose()*Rb*z.col(i);
 	}
 	
 	void move_one_step () {
