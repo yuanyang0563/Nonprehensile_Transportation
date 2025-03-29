@@ -20,4 +20,17 @@ Installed **Gurobi 12.0**. Check ~/.bashrc and export environment variables **GU
 
 Install the **cppzmq** package for the program to interface with the CoppeliaSim via the ZeroMQ remote API.
 
+To install the project, run the following commands in your terminal:
+
+````bash
+# clone the repository
+git clone https://github.com/yuanyang0563/Nonprehensile_Transportation.git
+# navigate into the project directory
+cd Nonprehensile_Transportation
+# make a directory and navigate into it
+mkdir build && cd build
+# build the project
+cmake ..
+make
+
 ## Usage
