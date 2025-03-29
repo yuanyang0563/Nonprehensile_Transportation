@@ -32,5 +32,8 @@ mkdir build && cd build
 # build the project
 cmake ..
 make
+```bash
+exit
+```
 
 ## Usage
