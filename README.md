@@ -22,7 +22,7 @@ Install the **cppzmq** package for the program to interface with the CoppeliaSim
 
 To install the project, run the following commands in your terminal:
 
-````bash
+```bash
 # clone the repository
 git clone https://github.com/yuanyang0563/Nonprehensile_Transportation.git
 # navigate into the project directory
@@ -32,7 +32,7 @@ mkdir build && cd build
 # build the project
 cmake ..
 make
-```bash
+
 exit
 ```
 
