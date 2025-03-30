@@ -13,7 +13,7 @@ class manipulators {
 	MatrixXd Au_d, Ao_d, Au_s, Ao_s;
 	VectorXd bu_d, bo_d, bu_s, bo_s;
 	
-	manipulators () {
+	manipulators (string arm_left, string arm_right) : left(arm_left), right(arm_right) {
 		Au_d = MatrixXd(6*N,6*N);
 		Ao_d = MatrixXd(6*N,6*N);
 		bu_d = VectorXd(6*N);

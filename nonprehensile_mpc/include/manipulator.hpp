@@ -5,6 +5,14 @@ using namespace Eigen;
 
 class manipulator {
 
+  private:
+  	ros::NodeHandle nh;
+	ros::Publisher pub;
+	ros::Subscriber sub;
+	sensor_msgs::JointState msg;
+	vpImage<unsigned char> image;
+	vpDisplay *display;
+
   public:
   
   	VectorXd a, alpha, d;
@@ -15,7 +23,7 @@ class manipulator {
 	Vector3d x, xb, xeo, xd;
 	Matrix3d R, Rb, Reo, Rd;
 	
-	manipulator() {
+	manipulator(string arm) {
 		a = VectorXd(6);
 		alpha = VectorXd(6);
 		d = VectorXd(6);
@@ -34,6 +42,16 @@ class manipulator {
 		bu_d = VectorXd(3*N);
 		Ao_d = MatrixXd(3*N,3*N);
 		bo_d = VectorXd(3*N);
+		pub = nh.advertise<sensor_msgs::JointState>(arm+"/joint_position",1);
+		msg.position.resize(6);
+		sub = nh.subscribe(arm+"/image",1,&manipulator::image_callback,this);
+		image.resize(640,640);
+		display = new vpDisplayX(image);
+		vpDisplay::setTitle(image, arm+"_image");
+	}
+	
+	~manipulator() {
+		delete display;
 	}
 
 	void get_pose_jacobian () {
@@ -57,10 +75,27 @@ class manipulator {
 			J.col(i)<< Rb*z.col(i).cross(o.col(6)-o.col(i)), R.transpose()*Rb*z.col(i);
 	}
 	
+	void image_callback(const sensor_msgs::ImageConstPtr& msg) {
+        	try {
+            		for (int i=0; i<msg->height; ++i) {
+                		for (int j=0; j<msg->width; ++j)
+                    		image[i][j] = msg->data[i*msg->step+3*j];
+            		}
+			vpDisplay::display(image);
+			vpDisplay::flush(image);
+        	} catch (const vpException &e) {
+	    		cerr << "Catch an exception: " << e.getMessage() << endl;
+        	}
+	}
+	
 	void move_one_step () {
 		dq << upsilon, omega;
 		dq = J.transpose()*(J*J.transpose()).inverse()*dq;
 		q += dt*dq;
+		for (int i=0; i<6; i++)
+			msg.position[i] = q(i);
+		pub.publish(msg);
+		ros::spinOnce();
 	}
 	
 	void set_tar_pars () {

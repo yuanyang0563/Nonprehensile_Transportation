@@ -1,8 +1,16 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include <std_msgs/Float32MultiArray.h>
+#include <sensor_msgs/JointState.h>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
+
+#include <visp3/core/vpImage.h>
+#include <visp3/core/vpConfig.h>
+#include <visp3/core/vpDisplay.h>
+#include <visp3/gui/vpDisplayX.h>
+
+#include <chrono>
+#include <thread>
 
 using namespace std;
 using namespace Eigen;
