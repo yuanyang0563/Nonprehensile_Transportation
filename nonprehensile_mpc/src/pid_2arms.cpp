@@ -1,33 +1,15 @@
 #include "manipulators.hpp"
-#include <chrono>
-#include <thread>
-
-#include <visp3/core/vpImage.h>
-#include <visp3/core/vpConfig.h>
-#include <visp3/core/vpDisplay.h>
-#include <visp3/gui/vpDisplayX.h>
 
 using namespace std;
 using namespace Eigen;
 
-vpImage<unsigned char> visp_image(640,640);
-
-void image_callback(const sensor_msgs::ImageConstPtr& msg) {
-        try {
-            for (int i=0; i<msg->height; ++i) {
-                for (int j=0; j<msg->width; ++j)
-                    visp_image[i][j] = msg->data[i*msg->step+3*j];
-            }
-        } catch (const vpException &e) {
-	    cerr << "Catch an exception: " << e.getMessage() << endl;
-        }
-}
-
 int main(int argc, char *argv[])
 {
 	init();
+	// set ROS
+	ros::init(argc,argv,"pid_controller");
 	// create the arms object
-	manipulators arms;
+	manipulators arms("arm_l","arm_r");
 	// set DH parameters
 	arms.left.a << 0.0, -0.24365, -0.21325, 0.0, 0.0, 0.0;
 	arms.left.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
@@ -50,13 +32,7 @@ int main(int argc, char *argv[])
 	arms.left.Rd << 1.0,  0.0, 0.0,  0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
 	arms.right.xd << 0.35, 0.2275, 0.20;
 	arms.right.Rd << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0;
-	
-	vpDisplay *d = new vpDisplayX(visp_image);
-	// set ROS
-	ros::init(argc,argv,"pid_controller");
-	ros::NodeHandle nh;
-	ros::Publisher pub = nh.advertise<std_msgs::Float32MultiArray>("joint_position",1);
-	ros::Subscriber sub_l = nh.subscribe("/image_l",1,image_callback);
+
 	while (true) {
 		// record the starting time of each round
 		auto t_start = chrono::high_resolution_clock::now();
@@ -65,23 +41,12 @@ int main(int argc, char *argv[])
 		// get the pose error and stops the simulation when the error is small enough
 		if (arms.cost()<1e-5)
 			break;
+		// compute controls and drive the arms
 		arms.left.upsilon = arms.left.xd-arms.left.x;
 		arms.left.omega = skewVec(arms.left.Rd*arms.left.R.transpose());
 		arms.right.upsilon = arms.right.xd-arms.right.x;
 		arms.right.omega = skewVec(arms.right.Rd*arms.right.R.transpose());
 		arms.move_one_step();
-		// publish joint position
-    		std_msgs::Float32MultiArray msg;
-		msg.data.resize(12);
-		for (int i=0; i<6; ++i) {
-			msg.data[i] = arms.left.q(i);
-			msg.data[i+6] = arms.right.q(i);
-		}
-		pub.publish(msg);
-		ros::spinOnce();
-		// display image
-		vpDisplay::display(visp_image);
-		vpDisplay::flush(visp_image);
 		// count the time spent in solving the control per round and the maximum time
 		auto t_stop = chrono::high_resolution_clock::now();
     		auto t_duration = chrono::duration<double>(t_stop-t_start);
@@ -90,7 +55,6 @@ int main(int argc, char *argv[])
     		if (t_duration.count()<dt)
     			this_thread::sleep_for(chrono::duration<double>(dt-t_duration.count()));
 	}
-	delete d;
 	cout << "Target pose reached!" << endl;
 	cout << "Maximum solution time: " << t_max << " s." << endl;
 	

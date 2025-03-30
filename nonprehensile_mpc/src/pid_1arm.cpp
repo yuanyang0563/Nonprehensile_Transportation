@@ -1,6 +1,4 @@
 #include "manipulator.hpp"
-#include <chrono>
-#include <thread>
 
 using namespace std;
 using namespace Eigen;
@@ -8,8 +6,10 @@ using namespace Eigen;
 int main(int argc, char *argv[])
 {
 	init();
+	// set ROS
+	ros::init(argc,argv,"pid_controller");
 	// create the arm object
-	manipulator arm;
+	manipulator arm("ur3");
 	// set DH parameters
 	arm.a << 0.0, -0.24365, -0.21325, 0.0, 0.0, 0.0;
 	arm.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
@@ -22,11 +22,6 @@ int main(int argc, char *argv[])
 	arm.Rb << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
 	arm.xd << 0.4, 0.25, 0.20;
 	arm.Rd << 0.0, -1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0;
-	// set ROS
-	ros::init(argc,argv,"pid_controller");
-	ros::NodeHandle nh;
-	ros::Publisher pub = nh.advertise<std_msgs::Float32MultiArray>("joint_position",1);
-	//ros::Subscriber sub = nh.subscribe("/joint_position",1,&manipulator::position_callback,this);
 	while (ros::ok()) {
 		// record the starting time of each round
 		auto t_start = chrono::high_resolution_clock::now();
@@ -35,16 +30,10 @@ int main(int argc, char *argv[])
 		// get the pose error and stops the simulation when the error is small enough
 		if (arm.cost()<1e-5)
 			break;
+		// compute control and drive the arm
 		arm.upsilon = arm.xd-arm.x;
 		arm.omega = skewVec(arm.Rd*arm.R.transpose());
 		arm.move_one_step();
-		// publish joint position
-    		std_msgs::Float32MultiArray msg;
-		msg.data.resize(6);
-		for (int i=0; i<6; i++)
-			msg.data[i] = arm.q(i);
-		pub.publish(msg);
-		ros::spinOnce();
 		// count the time spent in solving the control per round and the maximum time
 		auto t_stop = chrono::high_resolution_clock::now();
     		auto t_duration = chrono::duration<double>(t_stop-t_start);

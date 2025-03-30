@@ -1,7 +1,5 @@
 #include <gurobi_c++.h>
 #include "manipulators.hpp"
-#include <chrono>
-#include <thread>
 
 using namespace std;
 using namespace Eigen;
@@ -9,8 +7,10 @@ using namespace Eigen;
 int main(int argc, char *argv[])
 {
 	init();
+	// set ROS
+	ros::init(argc,argv,"pid_controller");
 	// create the arms object
-	manipulators arms;
+	manipulators arms("arm_l","arm_r");
 	// set DH parameters
 	arms.left.a << 0.0, -0.24365, -0.21325, 0.0, 0.0, 0.0;
 	arms.left.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
@@ -47,11 +47,6 @@ int main(int argc, char *argv[])
 			uof_ub[i] = fc;
 		uof_lb[i] =-uof_ub[i];
 	}
-	// set ROS
-	ros::init(argc,argv,"pid_controller");
-	ros::NodeHandle nh;
-	ros::Publisher pub = nh.advertise<std_msgs::Float32MultiArray>("joint_position",1);
-	//ros::Subscriber sub = nh.subscribe("/joint_position",1,&manipulator::position_callback,this);
 	// call Gurobi to perform optimal control
 	GRBEnv env = GRBEnv();
 	env.set(GRB_IntParam_OutputFlag, 0);
@@ -118,15 +113,6 @@ int main(int argc, char *argv[])
 			cout << "Exception during optimization." << endl;
 		}
 		arms.move_one_step();
-		// publish joint position
-    		std_msgs::Float32MultiArray msg;
-		msg.data.resize(12);
-		for (int i=0; i<6; ++i) {
-			msg.data[i] = arms.left.q(i);
-			msg.data[i+6] = arms.right.q(i);
-		}
-		pub.publish(msg);
-		ros::spinOnce();
 		// count the time spent in solving the control per round and the maximum time
 		auto t_stop = chrono::high_resolution_clock::now();
     		auto t_duration = chrono::duration<double>(t_stop-t_start);
