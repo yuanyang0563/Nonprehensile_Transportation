@@ -22,6 +22,8 @@ class manipulators {
 		Ao_s = MatrixXd(6*N,6*N);
 		bu_s = VectorXd(6*N);
 		bo_s = VectorXd(6*N);
+		left.display->setWindowPosition(0,0);
+		right.display->setWindowPosition(0,640);
 	}
 
 	void get_pose_jacobian () {

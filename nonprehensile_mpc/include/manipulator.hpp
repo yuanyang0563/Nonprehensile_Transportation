@@ -11,7 +11,6 @@ class manipulator {
 	ros::Subscriber sub;
 	sensor_msgs::JointState msg;
 	vpImage<unsigned char> image;
-	vpDisplay *display;
 
   public:
   
@@ -22,6 +21,7 @@ class manipulator {
 	Vector3d upsilon, omega;
 	Vector3d x, xb, xeo, xd;
 	Matrix3d R, Rb, Reo, Rd;
+	vpDisplay *display;
 	
 	manipulator(string arm) {
 		a = VectorXd(6);
@@ -45,7 +45,7 @@ class manipulator {
 		pub = nh.advertise<sensor_msgs::JointState>(arm+"/joint_position",1);
 		msg.position.resize(6);
 		sub = nh.subscribe(arm+"/image",1,&manipulator::image_callback,this);
-		image.resize(640,640);
+		image.resize(480,480);
 		display = new vpDisplayX(image);
 		vpDisplay::setTitle(image, arm+"_image");
 	}
