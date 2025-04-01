@@ -6,26 +6,31 @@ option(CXX "enable C++ compilation" ON)
 enable_language(CXX)
 set(CMAKE_CXX_STANDARD 17)
 
+include_directories(include)
+
+find_package(Boost REQUIRED COMPONENTS thread system)
+include_directories(${Boost_INCLUDE_DIRS})
+
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 find_package(GUROBI REQUIRED)
 include_directories(${GUROBI_INCLUDE_DIRS})
 
-set(COPPELIASIM_INCLUDE_DIR $ENV{COPPELIASIM_ROOT_DIR}/programming/include)
-list(APPEND CMAKE_MODULE_PATH ${COPPELIASIM_INCLUDE_DIR}/cmake)
-find_package(CoppeliaSim 4.1.0.0 REQUIRED)
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
-find_package(cppzmq REQUIRED)
-include_directories(include)
+find_package(VISP REQUIRED)
+include_directories(${VISP_INCLUDE_DIRS})
 
-add_library(RemoteAPIClient STATIC include/remote_api/RemoteAPIClient.cpp)
-target_compile_definitions(RemoteAPIClient PUBLIC -DSIM_REMOTEAPICLIENT_OBJECTS)
-target_link_libraries(RemoteAPIClient PUBLIC cppzmq)
+find_package(catkin REQUIRED COMPONENTS roscpp sensor_msgs)
+include_directories(${catkin_INCLUDE_DIRS})
 
-add_executable(mpc_1arm src/mpc_1arm.cpp src/common.cpp)
-target_link_libraries(mpc_1arm RemoteAPIClient optimized ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
 
-add_executable(mpc_2arms src/mpc_2arms.cpp src/common.cpp)
-target_link_libraries(mpc_2arms RemoteAPIClient optimized ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
 
-add_executable(pid_2arms src/pid_2arms.cpp src/common.cpp)
-target_link_libraries(pid_2arms RemoteAPIClient)
+add_executable(pid_1arm src/pid_1arm.cpp src/common.cpp)
+target_link_libraries(pid_1arm ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES})
+
+#add_executable(mpc_1arm src/mpc_1arm.cpp src/common.cpp)
+#target_link_libraries(mpc_1arm ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES} optimized ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
+
+#add_executable(pid_2arms src/pid_2arms.cpp src/common.cpp)
+#target_link_libraries(pid_2arms ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES})
+
+#add_executable(mpc_2arms src/mpc_2arms.cpp src/common.cpp)
+#target_link_libraries(mpc_2arms ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES} optimized ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
