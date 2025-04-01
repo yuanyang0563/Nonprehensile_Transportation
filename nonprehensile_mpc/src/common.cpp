@@ -13,7 +13,9 @@ double I2 = 0.1;
 double I3 = 0.1;
 double mu = 0.1;
 
-DiagonalMatrix<double, 3> I;
+DiagonalMatrix<double,3> I;
+DiagonalMatrix<double,3> Ku;
+DiagonalMatrix<double,3> Ko;
 
 Vector3d r1( 0.075,-0.075,-0.075);
 Vector3d r2( 0.075, 0.075,-0.075);
@@ -28,15 +30,18 @@ double vt = 1.0;
 double vr = 1.0;
 double fc = 1e5;
 double epsilon = 0.01;
-double kappa_u = 3.0;
+double kappa_u = 1.0;
 double alpha_u = 300.0;
-double kappa_o = 0.1;
-double alpha_o = 30.0;
-double rho_u = 3.0;
-double rho_o = 1.0;
+double kappa_o = 1.0;
+double alpha_o = 300.0;
+double rho_u = 0.0;
+double rho_o = 0.0;
+double gamma_v = 0.05;
 
 void init () {
   I.diagonal() << I1, I2, I3;
+  Ku.diagonal() << 1.0, -1.0,  1.0;
+  Ko.diagonal() << 1.0, -1.0, -1.0;
   r << r1.transpose(), r2.transpose(), r3.transpose(), r4.transpose();
   Gamma = MatrixXd::Identity(N,N);
   for (int n=1; n<N; ++n)

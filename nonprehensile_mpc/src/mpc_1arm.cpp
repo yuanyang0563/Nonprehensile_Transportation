@@ -19,12 +19,28 @@ int main(int argc, char *argv[])
 	arm.q << -M_PI/4.0, -2.0*M_PI/3.0, -M_PI/4.0, -7.0*M_PI/12.0, M_PI/2.0, -M_PI/4.0;
 	arm.xeo << 0.0, -0.125, 0.025;
 	arm.Reo << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0;
+	arm.xec << 0.045, -0.02, 0.01;
+	arm.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
 	arm.xb << 0.0, 0.0, 0.0;
 	arm.Rb << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
 	arm.xd << 0.4, 0.25, 0.20;
 	arm.Rd << 0.0, -1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0;
-    	// set parameters for the objective functions
+	double mode;
+	if (argc<2) {
+		cout << "Please set the control mode:" << endl;
+		cout << "0 for visual servoing, 1 for target reaching." << endl;
+		return 1;
+	} else {
+		mode = stod(argv[1]);
+		if (mode==0.0 || mode==1.0)
+			ros::param::set("/control_mode",mode);
+		else {
+			ROS_ERROR("Wrong mode.");
+			return 1;
+		}
+	}
 	arm.set_tar_pars();
+	arm.set_vis_pars();
 	// set upper and lower bounds of linear and angular velocities
 	double uof_ub[18*N], uof_lb[18*N];
 	for (int i=0; i<18*N; ++i) {
@@ -49,16 +65,20 @@ int main(int argc, char *argv[])
 			break;
 		// update parameters for the optimal control problem
 		arm.update_tar_pars();
+		arm.update_vis_pars();
+		MatrixXd A_obj = mode*arm.A_d+(1.0-mode)*arm.A_v;
+		VectorXd b_obj = mode*arm.b_d+(1.0-mode)*arm.b_v;
+		if (arm.getImage) {
 		try {
 			// create a gurobi model and add optimization variables uof with lower and upper bounds
 			GRBModel model = GRBModel(env);
 			GRBVar *uof = model.addVars(uof_lb,uof_ub,NULL,NULL,NULL,18*N);
 			// set the objective function
 			GRBQuadExpr obj = 0.0;
-			for (int i=0; i<3*N; ++i) {
-				for (int j=0; j<3*N; ++j)
-					obj += dt*uof[i]*arm.Au_d(i,j)*uof[j]+dt*uof[3*N+i]*arm.Ao_d(i,j)*uof[3*N+j];
-				obj += 2.0*arm.bu_d(i)*uof[i]+2.0*arm.bo_d(i)*uof[3*N+i];
+			for (int i=0; i<6*N; ++i) {
+				for (int j=0; j<6*N; ++j)
+					obj += dt*uof[i]*A_obj(i,j)*uof[j];
+				obj += 2.0*b_obj(i)*uof[i];
 			}
 			model.setObjective(obj);
 			// add motion constraints on the transported object
@@ -91,6 +111,7 @@ int main(int argc, char *argv[])
 			// reduce the prediction horizon (N) or increase the weight (alpha) in the objective also make sense.
 		} catch(...) {
 			cout << "Exception during optimization." << endl;
+		}
 		}
 		arm.move_one_step();
 		// count the time spent in solving the control per round and the maximum time

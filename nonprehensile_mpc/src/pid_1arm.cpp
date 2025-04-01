@@ -16,12 +16,27 @@ int main(int argc, char *argv[])
 	arm.d << 0.1519, 0.0, 0.0, 0.11235, 0.08535, 0.0819;
 	// set the initial joint coordinates
 	arm.q << -M_PI/4.0, -2.0*M_PI/3.0, -M_PI/4.0, -7.0*M_PI/12.0, M_PI/2.0, -M_PI/4.0;
-	arm.xeo << 0.0, -0.125, 0.025;
-	arm.Reo << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0;
+	arm.xec << 0.045, -0.02, 0.01;
+	arm.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
 	arm.xb << 0.0, 0.0, 0.0;
 	arm.Rb << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
 	arm.xd << 0.4, 0.25, 0.20;
 	arm.Rd << 0.0, -1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0;
+	double mode;
+	if (argc<2) {
+		cout << "Please set the control mode:" << endl;
+		cout << "0 for visual servoing, 1 for target reaching." << endl;
+		return 1;
+	} else {
+		mode = stod(argv[1]);
+		if (mode==0.0 || mode==1.0)
+			ros::param::set("/control_mode",mode);
+		else {
+			cout << "Wrong mode." << endl;
+			return 1;
+		}
+	}
+	arm.set_vis_pars();
 	while (ros::ok()) {
 		// record the starting time of each round
 		auto t_start = chrono::high_resolution_clock::now();
@@ -31,8 +46,21 @@ int main(int argc, char *argv[])
 		if (arm.cost()<1e-5)
 			break;
 		// compute control and drive the arm
-		arm.upsilon = arm.xd-arm.x;
-		arm.omega = skewVec(arm.Rd*arm.R.transpose());
+		if (arm.getImage) {
+			arm.update_vis_pars();
+			MatrixXd L(8,6);
+			for (int i=0; i<4; ++i) {
+				L.row(2*i+0) = arm.L[i].row(0);
+				L.row(2*i+1) = arm.L[i].row(1);
+			}
+			L = L*arm.Tv;
+			VectorXd Zeta(8), Zeta_d(8);
+			Zeta << arm.zeta[0], arm.zeta[1], arm.zeta[2], arm.zeta[3];
+			Zeta_d << arm.zeta_d[0], arm.zeta_d[1], arm.zeta_d[2], arm.zeta_d[3];
+			VectorXd vel = 3.0*(L.transpose()*L).inverse()*L.transpose()*(Zeta_d-Zeta);
+			arm.upsilon = mode*(arm.xd-arm.x)+(1.0-mode)*vel.head(3);
+			arm.omega = mode*skewVec(arm.Rd*arm.R.transpose())+(1.0-mode)*vel.tail(3);
+		}
 		arm.move_one_step();
 		// count the time spent in solving the control per round and the maximum time
 		auto t_stop = chrono::high_resolution_clock::now();
