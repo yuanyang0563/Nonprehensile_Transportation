@@ -1,5 +1,17 @@
+#include <ros/ros.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/JointState.h>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
+#include <visp3/core/vpImage.h>
+#include <visp3/core/vpConfig.h>
+#include <visp3/core/vpDisplay.h>
+#include <visp3/gui/vpDisplayX.h>
+#include <visp3/core/vpCameraParameters.h>
+#include <visp3/core/vpPixelMeterConversion.h>
+#include <visp3/detection/vpDetectorAprilTag.h>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 using namespace Eigen;
@@ -37,6 +49,7 @@ extern double kappa_o;
 extern double alpha_o;
 extern double rho_u;
 extern double rho_o;
+extern double gamma_v;
 extern double uof_ub[];
 extern double uof_lb[];
 

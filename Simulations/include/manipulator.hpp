@@ -5,18 +5,34 @@ using namespace Eigen;
 
 class manipulator {
 
+  private:
+  	ros::NodeHandle nh;
+	ros::Publisher pub;
+	ros::Subscriber sub;
+	sensor_msgs::JointState msg;
+	vpImage<unsigned char> image;
+	vpCameraParameters cam;
+	vector<vector<vpImagePoint>> tagsCorners;
+
   public:
-  
   	VectorXd a, alpha, d;
 	VectorXd q, dq;
 	VectorXd bu_d, bo_d, eta, lambda, h;
-	MatrixXd J, Au_d, Ao_d, Hu, Ho, Hf;
+	MatrixXd J, Au_d, Ao_d, Hu, Ho, Hf, Tv;
 	Vector3d upsilon, omega;
-	Vector3d x, xb, xeo, xd;
-	Matrix3d R, Rb, Reo, Rd;
-	int jointHandles[6];
+	Vector3d x, xb, xeo, xec, xd;
+	Matrix3d R, Rb, Reo, Rec, Rd;
+	bool getImage;
+	vpDisplay *display;
+	vpDetectorAprilTag detector;
+	vector<Vector3d> p;
+	vector<Vector2d> zeta, zeta_d;
+	vector<Matrix<double,2,6>> L;
 	
-	manipulator() {
+	MatrixXd A_v;
+	VectorXd b_v;
+	
+	manipulator(string arm) {
 		a = VectorXd(6);
 		alpha = VectorXd(6);
 		d = VectorXd(6);
@@ -35,6 +51,25 @@ class manipulator {
 		bu_d = VectorXd(3*N);
 		Ao_d = MatrixXd(3*N,3*N);
 		bo_d = VectorXd(3*N);
+		pub = nh.advertise<sensor_msgs::JointState>(arm+"/joint_position",1);
+		msg.position.resize(6);
+		sub = nh.subscribe(arm+"/image",1,&manipulator::image_callback,this);
+		image.resize(480,480);
+		getImage = false;
+		display = new vpDisplayX(image);
+		vpDisplay::setTitle(image, arm+"_image");
+		cam.initPersProjWithoutDistortion(480,480,240,240);
+		p.resize(4);
+		zeta.resize(4);
+		zeta_d.resize(4);
+		L.resize(4);
+		Tv = MatrixXd(6,6);
+		A_v = MatrixXd(6*N,6*N);
+		b_v = VectorXd(6*N);
+	}
+	
+	~manipulator() {
+		delete display;
 	}
 
 	void get_pose_jacobian () {
@@ -58,10 +93,41 @@ class manipulator {
 			J.col(i)<< Rb*z.col(i).cross(o.col(6)-o.col(i)), R.transpose()*Rb*z.col(i);
 	}
 	
+	void image_callback(const sensor_msgs::ImageConstPtr& msg) {
+        	try {
+            		for (int i=0; i<msg->height; ++i) {
+                		for (int j=0; j<msg->width; ++j)
+                			image[i][j] = msg->data[i*msg->step+3*j];
+            		}
+            		detector.detect(image);
+            		tagsCorners = detector.getTagsCorners();
+            		if (tagsCorners[0].size()==4) {
+				for (int i=0; i<4; ++i) {
+            				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],zeta[i](0),zeta[i](1));
+            				L[i].row(0) << -1.0,  0.0, zeta[i](0), zeta[i](0)*zeta[i](1), -1.0-zeta[i](0)*zeta[i](0),  zeta[i](1);
+            				L[i].row(1) <<  0.0, -1.0, zeta[i](1), 1.0+zeta[i](1)*zeta[i](1), -zeta[i](0)*zeta[i](1), -zeta[i](0);
+            				if (!getImage)
+            					zeta_d[i] = zeta[i];
+            			}
+            			getImage = true;
+            		} else {
+            			getImage = false;
+            		}
+			vpDisplay::display(image);
+			vpDisplay::flush(image);
+        	} catch (const vpException &e) {
+	    		cerr << "Catch an exception: " << e.getMessage() << endl;
+        	}
+	}
+	
 	void move_one_step () {
 		dq << upsilon, omega;
 		dq = J.transpose()*(J*J.transpose()).inverse()*dq;
 		q += dt*dq;
+		for (int i=0; i<6; i++)
+			msg.position[i] = q(i);
+		pub.publish(msg);
+		ros::spinOnce();
 	}
 	
 	void set_tar_pars () {
@@ -80,6 +146,18 @@ class manipulator {
 		h.tail(3*N) = lambda-dt*kroneckerProduct(MatrixXd::Ones(N,1),skewMat(Reo.transpose()*omega)*I*Reo.transpose()*omega);
 		Ho << m*kroneckerProduct(Gamma,R*skewMat(xeo)), -kroneckerProduct(Gamma,I*Reo.transpose());
 		Hf << kroneckerProduct(MatrixXd::Identity(N,N),R*Reo*Gu), kroneckerProduct(MatrixXd::Identity(N,N),Go);
+	}
+	
+	void set_vis_pars () {
+		Tv.block(0,3,3,3) = -Rec.transpose()*skewMat(xec);
+		Tv.block(3,0,3,3) = Matrix3d::Zero();
+		Tv.block(3,3,3,3) = Rec.transpose();
+	}
+	
+	void update_vis_pars () {
+		A_v.setZero();
+		b_v.setZero();
+		Tv.block(0,0,3,3) = (R*Rec).transpose();
 	}
 	
 	inline double cost () {
