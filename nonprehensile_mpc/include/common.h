@@ -29,8 +29,6 @@ extern double I2;
 extern double I3;
 extern double mu;
 extern DiagonalMatrix<double,3> I;
-extern DiagonalMatrix<double,3> Ku;
-extern DiagonalMatrix<double,3> Ko;
 
 extern Vector3d r1;
 extern Vector3d r2;

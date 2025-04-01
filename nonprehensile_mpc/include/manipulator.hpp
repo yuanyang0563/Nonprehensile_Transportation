@@ -95,7 +95,7 @@ class manipulator {
         	try {
             		for (int i=0; i<msg->height; ++i) {
                 		for (int j=0; j<msg->width; ++j)
-                			image[i][j] = msg->data[i*msg->step+3*j];
+                			image[msg->height-i-1][j] = msg->data[i*msg->step+3*j];
             		}
             		detector.detect(image);
             		tagsCorners = detector.getTagsCorners();
@@ -146,14 +146,14 @@ class manipulator {
 	}
 	
 	void set_vis_pars () {
-		Tv.block(0,3,3,3) = -Rec.transpose()*skewMat(xec)*Ko;
-		Tv.block(3,3,3,3) = Rec.transpose()*Ko;
+		Tv.block(0,3,3,3) = -Rec.transpose()*skewMat(xec);
+		Tv.block(3,3,3,3) = Rec.transpose();
 	}
 	
 	void update_vis_pars () {
 		A_v.setZero();
 		b_v.setZero();
-		Tv.block(0,0,3,3) = (R*Rec).transpose()*Ku;
+		Tv.block(0,0,3,3) = (R*Rec).transpose();
 		for (int i=0; i<4; ++i) {
 			MatrixXd Lu = 15.0*L[i]*Tv.block(0,0,6,3);
 			MatrixXd Lo = 15.0*L[i]*Tv.block(0,3,6,3);
