@@ -12,10 +12,7 @@ double I1 = 0.1;
 double I2 = 0.1;
 double I3 = 0.1;
 double mu = 0.1;
-
 DiagonalMatrix<double,3> I;
-DiagonalMatrix<double,3> Ku;
-DiagonalMatrix<double,3> Ko;
 
 Vector3d r1( 0.075,-0.075,-0.075);
 Vector3d r2( 0.075, 0.075,-0.075);
@@ -40,8 +37,6 @@ double gamma_v = 0.05;
 
 void init () {
   I.diagonal() << I1, I2, I3;
-  Ku.diagonal() << 1.0, -1.0,  1.0;
-  Ko.diagonal() << 1.0, -1.0, -1.0;
   r << r1.transpose(), r2.transpose(), r3.transpose(), r4.transpose();
   Gamma = MatrixXd::Identity(N,N);
   for (int n=1; n<N; ++n)

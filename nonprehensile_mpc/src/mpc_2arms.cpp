@@ -11,24 +11,50 @@ int main(int argc, char *argv[])
 	ros::init(argc,argv,"pid_controller");
 	// create the arms object
 	manipulators arms("arm_l","arm_r");
-	// set DH parameters
+	// set the DH parameters of arms
 	arms.left.a << 0.0, -0.24365, -0.21325, 0.0, 0.0, 0.0;
 	arms.left.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
 	arms.left.d << 0.1519, 0.0, 0.0, 0.11235, 0.08535, 0.0819;
 	arms.right.a << 0.0, -0.24365, -0.21325, 0.0, 0.0, 0.0;
 	arms.right.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
 	arms.right.d << 0.1519, 0.0, 0.0, 0.11235, 0.08535, 0.0819;
-	// set the initial joint coordinates
+	// set the initial joint coordinates of arms
 	arms.left.q <<  -M_PI, -1.0*M_PI/3.0,  M_PI/4.0, -5.0*M_PI/12.0, -M_PI/2.0,  M_PI/4.0;
 	arms.right.q << -M_PI, -2.0*M_PI/3.0, -M_PI/4.0, -7.0*M_PI/12.0,  M_PI/2.0, -M_PI/4.0;
+	// set the object poses relative to the end-effector frames of arms
 	arms.left.xeo << 0.0, -0.2405, 0.025;
 	arms.left.Reo <<  1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
 	arms.right.xeo << 0.0, -0.2405, 0.025;
 	arms.right.Reo << -1.0, 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, 0.0, -1.0;
+	// set the poses of camera frames relative to tne end-effector frames of arms
+	arms.left.xec << 0.045, -0.02, 0.01;
+	arms.left.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
+	arms.right.xec << 0.045, -0.02, 0.01;
+	arms.right.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
+	// set the coordinates of marker corners in the object frame
+	arms.left.p[0] << -0.04, -0.075, -0.04;
+	arms.left.p[1] <<  0.04, -0.075, -0.04;
+	arms.left.p[2] <<  0.04, -0.075,  0.04;
+	arms.left.p[3] << -0.04, -0.075,  0.04;
+	arms.right.p[0] <<  0.04, 0.075, -0.04;
+	arms.right.p[1] << -0.04, 0.075, -0.04;
+	arms.right.p[2] << -0.04, 0.075,  0.04;
+	arms.right.p[3] <<  0.04, 0.075,  0.04;
+	// set the desired image coordinates
+	arms.left.zeta_d[0] << -0.31,  0.31;
+	arms.left.zeta_d[1] <<  0.31,  0.31;
+	arms.left.zeta_d[2] <<  0.31, -0.31;
+	arms.left.zeta_d[3] << -0.31, -0.31;
+	arms.right.zeta_d[0] << -0.31,  0.31;
+	arms.right.zeta_d[1] <<  0.31,  0.31;
+	arms.right.zeta_d[2] <<  0.31, -0.31;
+	arms.right.zeta_d[3] << -0.31, -0.31;
+	// set the poses of arm bases
 	arms.left.xb <<  0, -0.44, 0.0;
 	arms.left.Rb << cos(3.0*M_PI/4.0), -sin(3.0*M_PI/4.0), 0.0, sin(3.0*M_PI/4.0), cos(3.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
 	arms.right.xb << 0, 0.44, 0.0;
 	arms.right.Rb << cos(M_PI/4.0), -sin(M_PI/4.0), 0.0, sin(M_PI/4.0), cos(M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
+	// set the desired poses of arms
 	arms.left.xd <<  0.35, -0.2275, 0.20;
 	arms.left.Rd << 1.0,  0.0, 0.0,  0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
 	arms.right.xd << 0.35, 0.2275, 0.20;
@@ -50,7 +76,7 @@ int main(int argc, char *argv[])
 	// call Gurobi to perform optimal control
 	GRBEnv env = GRBEnv();
 	env.set(GRB_IntParam_OutputFlag, 0);
-	while (true) {
+	while (ros::ok()) {
 		// record the starting time of each round
 		auto t_start = chrono::high_resolution_clock::now();
 		// get the current robot poses and Jacobians
@@ -61,16 +87,17 @@ int main(int argc, char *argv[])
 		// update parameters for the optimal control problem
 		arms.update_tar_pars();
 		arms.update_syn_pars();
+		arms.update_vis_pars();
 		try {
 			// create a gurobi model and add optimization variables uof with lower and upper bounds
 			GRBModel model = GRBModel(env);
 			GRBVar *uof = model.addVars(uof_lb,uof_ub,NULL,NULL,NULL,24*N);
 			// set the objective function
 			GRBQuadExpr obj = 0.0;
-			for (int i=0; i<6*N; ++i) {
-				for (int j=0; j<6*N; ++j)
-					obj += dt*uof[i]*(arms.Au_d(i,j)+arms.Au_s(i,j))*uof[j]+dt*uof[6*N+i]*(arms.Ao_d(i,j)+arms.Ao_s(i,j))*uof[6*N+j];
-				obj += 2.0*(arms.bu_d(i)+arms.bu_s(i))*uof[i]+2.0*(arms.bo_d(i)+arms.bo_s(i))*uof[6*N+i];
+			for (int i=0; i<12*N; ++i) {
+				for (int j=0; j<12*N; ++j)
+					obj += dt*uof[i]*(arms.A_d(i,j)+arms.A_s(i,j)+arms.A_v(i,j))*uof[j];
+				obj += 2.0*(arms.b_d(i)+arms.b_s(i)+arms.b_v(i))*uof[i];
 			}
 			model.setObjective(obj);
 			// add motion constraints on the transported object

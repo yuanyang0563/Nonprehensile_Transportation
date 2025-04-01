@@ -24,16 +24,35 @@ int main(int argc, char *argv[])
 	arms.left.Reo <<  1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
 	arms.right.xeo << 0.0, -0.2405, 0.025;
 	arms.right.Reo << -1.0, 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, 0.0, -1.0;
+	arms.left.xec << 0.045, -0.02, 0.01;
+	arms.left.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
+	arms.right.xec << 0.045, -0.02, 0.01;
+	arms.right.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
 	arms.left.xb <<  0, -0.44, 0.0;
 	arms.left.Rb << cos(3.0*M_PI/4.0), -sin(3.0*M_PI/4.0), 0.0, sin(3.0*M_PI/4.0), cos(3.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
 	arms.right.xb << 0, 0.44, 0.0;
 	arms.right.Rb << cos(M_PI/4.0), -sin(M_PI/4.0), 0.0, sin(M_PI/4.0), cos(M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
 	arms.left.xd <<  0.35, -0.2275, 0.20;
 	arms.left.Rd << 1.0,  0.0, 0.0,  0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
-	arms.right.xd << 0.35, 0.2275, 0.20;
+	arms.right.xd << 0.35,  0.2275, 0.20;
 	arms.right.Rd << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0;
-
-	while (true) {
+	double mode;
+	if (argc<2) {
+		cout << "Please set the control mode:" << endl;
+		cout << "0 for visual servoing, 1 for target reaching." << endl;
+		return 1;
+	} else {
+		mode = stod(argv[1]);
+		if (mode==0.0 || mode==1.0)
+			ros::param::set("/control_mode",mode);
+		else {
+			cout << "Wrong mode." << endl;
+			return 1;
+		}
+	}
+	arms.left.set_vis_pars();
+	arms.right.set_vis_pars();
+	while (ros::ok()) {
 		// record the starting time of each round
 		auto t_start = chrono::high_resolution_clock::now();
 		// get the current robot poses and Jacobians
@@ -42,10 +61,30 @@ int main(int argc, char *argv[])
 		if (arms.cost()<1e-5)
 			break;
 		// compute controls and drive the arms
-		arms.left.upsilon = arms.left.xd-arms.left.x;
-		arms.left.omega = skewVec(arms.left.Rd*arms.left.R.transpose());
-		arms.right.upsilon = arms.right.xd-arms.right.x;
-		arms.right.omega = skewVec(arms.right.Rd*arms.right.R.transpose());
+		if (arms.left.getImage && arms.right.getImage) {
+			arms.left.update_vis_pars();
+			arms.right.update_vis_pars();
+			MatrixXd L_left(8,6), L_right(8,6);
+			for (int i=0; i<4; ++i) {
+				L_left.row(2*i+0) = arms.left.L[i].row(0);
+				L_left.row(2*i+1) = arms.left.L[i].row(1);
+				L_right.row(2*i+0) = arms.right.L[i].row(0);
+				L_right.row(2*i+1) = arms.right.L[i].row(1);
+			}
+			L_left = L_left*arms.left.Tv;
+			L_right = L_right*arms.right.Tv;
+			VectorXd Zeta_l(8), Zeta_ld(8), Zeta_r(8), Zeta_rd(8);
+			Zeta_l << arms.left.zeta[0], arms.left.zeta[1], arms.left.zeta[2], arms.left.zeta[3];
+			Zeta_ld << arms.left.zeta_d[0], arms.left.zeta_d[1], arms.left.zeta_d[2], arms.left.zeta_d[3];
+			Zeta_r << arms.right.zeta[0], arms.right.zeta[1], arms.right.zeta[2], arms.right.zeta[3];
+			Zeta_rd << arms.right.zeta_d[0], arms.right.zeta_d[1], arms.right.zeta_d[2], arms.right.zeta_d[3];
+			VectorXd vel_left = 5.0*(L_left.transpose()*L_left).inverse()*L_left.transpose()*(Zeta_ld-Zeta_l);
+			VectorXd vel_right = 5.0*(L_right.transpose()*L_right).inverse()*L_right.transpose()*(Zeta_rd-Zeta_r);
+			arms.left.upsilon = mode*(arms.left.xd-arms.left.x)+(1.0-mode)*vel_left.head(3);
+			arms.left.omega = mode*skewVec(arms.left.Rd*arms.left.R.transpose())+(1.0-mode)*vel_left.tail(3);
+			arms.right.upsilon = mode*(arms.right.xd-arms.right.x)+(1.0-mode)*vel_right.head(3);
+			arms.right.omega = mode*skewVec(arms.right.Rd*arms.right.R.transpose())+(1.0-mode)*vel_right.tail(3);
+		}
 		arms.move_one_step();
 		// count the time spent in solving the control per round and the maximum time
 		auto t_stop = chrono::high_resolution_clock::now();
