@@ -17,20 +17,15 @@ class manipulator {
   public:
   	VectorXd a, alpha, d;
 	VectorXd q, dq;
-	VectorXd b_d, eta, lambda, h;
-	MatrixXd J, A_d, Hu, Ho, Hf, Tv;
+	VectorXd b_d, b_v, eta, lambda, h;
+	MatrixXd J, A_d, A_v, Hu, Ho, Hf, Tu, To, L, Lu, Lo, Lm;
 	Vector3d upsilon, omega;
 	Vector3d x, xb, xeo, xec, xd;
 	Matrix3d R, Rb, Reo, Rec, Rd;
 	bool getImage;
 	vpDisplay *display;
 	vpDetectorAprilTag detector;
-	vector<Vector3d> p;
-	vector<Vector2d> zeta, zeta_d;
-	vector<Matrix<double,2,6>> L;
-	
-	MatrixXd A_v;
-	VectorXd b_v;
+	VectorXd zeta, zeta_d;
 	
 	manipulator(string arm) {
 		a = VectorXd(6);
@@ -59,17 +54,20 @@ class manipulator {
 		display = new vpDisplayX(image);
 		vpDisplay::setTitle(image, arm+"_image");
 		cam.initPersProjWithoutDistortion(480,480,240,240);
-		Tv = MatrixXd::Zero(6,6);
-		p.resize(4);
-		zeta.resize(4);
-		zeta_d.resize(4);
-		L.resize(4);
+		Tu = MatrixXd::Zero(6,3);
+		To = MatrixXd::Zero(6,3);
+		L = MatrixXd::Zero(8,6);
+		Lu = MatrixXd::Zero(8,3);
+		Lo = MatrixXd::Zero(8,3);
+		Lm = MatrixXd::Zero(8,6);
+		zeta = VectorXd(8);
+		zeta_d = VectorXd(8);
 	}
 	
 	~manipulator() {
 		delete display;
 	}
-
+	
 	void get_pose_jacobian () {
 		Matrix4d A;
 		MatrixXd T = Matrix4d::Identity();
@@ -101,12 +99,12 @@ class manipulator {
             		tagsCorners = detector.getTagsCorners();
             		if (tagsCorners[0].size()==4) {
 				for (int i=0; i<4; ++i) {
-            				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],zeta[i](0),zeta[i](1));
-            				L[i].row(0) << -10.0,   0.0, 10.0*zeta[i](0), zeta[i](0)*zeta[i](1), -1.0-zeta[i](0)*zeta[i](0),  zeta[i](1);
-            				L[i].row(1) <<   0.0, -10.0, 10.0*zeta[i](1), 1.0+zeta[i](1)*zeta[i](1), -zeta[i](0)*zeta[i](1), -zeta[i](0);
-            				if (!getImage)
-            					zeta_d[i] = zeta[i];
+            				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],zeta(2*i+0),zeta(2*i+1));
+            				L.row(2*i+0) << -10.0,   0.0, 10.0*zeta(2*i+0), zeta(2*i+0)*zeta(2*i+1), -1.0-zeta(2*i+0)*zeta(2*i+0),  zeta(2*i+1);
+            				L.row(2*i+1) <<   0.0, -10.0, 10.0*zeta(2*i+1), 1.0+zeta(2*i+1)*zeta(2*i+1), -zeta(2*i+0)*zeta(2*i+1), -zeta(2*i+0);
             			}
+            			if (!getImage)
+            				zeta_d = zeta;
             			getImage = true;
             		} else {
             			getImage = false;
@@ -129,7 +127,7 @@ class manipulator {
 	}
 	
 	void set_tar_pars () {
-		A_d.block(0,0,3*N,3*N) = alpha_u*MatrixXd::Identity(3*N,3*N)+kappa_u*kroneckerProduct(Snn,Matrix3d::Identity());
+		A_d.block(0,0,3*N,3*N) = kappa_u*kroneckerProduct(Snn,Matrix3d::Identity())+alpha_u*MatrixXd::Identity(3*N,3*N);
 		A_d.block(3*N,3*N,3*N,3*N) = alpha_o*MatrixXd::Identity(3*N,3*N);
 		Hu.block(0,0,3*N,3*N) = m*kroneckerProduct(Gamma,Matrix3d::Identity());
 	}
@@ -146,24 +144,22 @@ class manipulator {
 	}
 	
 	void set_vis_pars () {
-		Tv.block(0,3,3,3) = -Rec.transpose()*skewMat(xec);
-		Tv.block(3,3,3,3) = Rec.transpose();
+		To << -Rec.transpose()*skewMat(xec), Rec.transpose();
 	}
 	
 	void update_vis_pars () {
 		A_v.setZero();
 		b_v.setZero();
-		Tv.block(0,0,3,3) = (R*Rec).transpose();
-		for (int i=0; i<4; ++i) {
-			MatrixXd Lu = 15.0*L[i]*Tv.block(0,0,6,3);
-			MatrixXd Lo = 15.0*L[i]*Tv.block(0,3,6,3);
-			A_v.block(0,0,3*N,3*N) += kroneckerProduct(Snn,Lu.transpose()*Lu);
-			A_v.block(0,3*N,3*N,3*N) += kroneckerProduct(Snn,Lu.transpose()*Lo);
-			A_v.block(3*N,0,3*N,3*N) += kroneckerProduct(Snn,Lo.transpose()*Lu);
-			A_v.block(3*N,3*N,3*N,3*N) += kroneckerProduct(Snn,Lo.transpose()*Lo);
-			b_v.head(3*N) += Sn*Lu.transpose()*(zeta[i]-zeta_d[i]);
-			b_v.tail(3*N) += Sn*Lo.transpose()*(zeta[i]-zeta_d[i]);
-		}
+		Tu.block(0,0,3,3) = (R*Rec).transpose();
+		Lu = L*Tu;
+		Lo = L*To;
+		Lm << Lu, Lo;
+		A_v.block(0,0,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lu.transpose()*Lu);
+		A_v.block(0,3*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lu.transpose()*Lo);
+		A_v.block(3*N,0,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lo.transpose()*Lu);
+		A_v.block(3*N,3*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lo.transpose()*Lo);
+		b_v.head(3*N) = Sn*Lu.transpose()*(zeta-zeta_d);
+		b_v.tail(3*N) = Sn*Lo.transpose()*(zeta-zeta_d);
 	}
 	
 	inline double cost () {

@@ -48,7 +48,7 @@ class manipulators {
 		right.update_tar_pars();
 		b_d << left.b_d.head(3*N), right.b_d.head(3*N), left.b_d.tail(3*N), right.b_d.tail(3*N);
 	}
-	/*
+	
 	void set_syn_pars () {
 		A_s.block(0,0,3*N,3*N) = rho_u*kroneckerProduct(Snn,Matrix3d::Identity());
 		A_s.block(0,3*N,3*N,3*N) = -rho_u*kroneckerProduct(Snn,left.Rd*right.Rd.transpose());
@@ -65,28 +65,28 @@ class manipulators {
 		A_s.block(9*N,6*N,3*N,3*N) = 0.5*rho_o*kroneckerProduct(Snn,left.R.transpose()*left.Rd*right.Rd.transpose()*right.R-(left.R.transpose()*left.Rd*right.Rd.transpose()*right.R).trace()*Matrix3d::Identity());
 	}
 	
-	void update_vis_pars () {
-		A_v.setZero();
-		b_v.setZero();
-		MatrixXd A, B, C;
-		for (int i=0; i<4; ++i) {
-			A = left.R*left.Rec*left.L[i].transpose();
-			B = skewMat(left.Reo*left.p[i]+left.xeo)*left.Rec*left.L[i].transpose();
-			C = skewMat(right.Reo*left.p[i]+right.xeo)*right.R.transpose()*left.R*left.Rec*left.L[i].transpose();
-			MatrixXd Lt_left(12*N,2);
-			Lt_left << -Sn*A, Sn*A, -Sn*B, Sn*C;
-			A_v += gamma_v*Lt_left*Lt_left.transpose();
-			b_v += gamma_v*Lt_left*(left.zeta[i]-left.zeta_d[i]);
-			A = right.R*right.Rec*right.L[i].transpose();
-			B = skewMat(left.Reo*right.p[i]+left.xeo)*left.R.transpose()*right.R*right.Rec*right.L[i].transpose();
-			C = skewMat(right.Reo*right.p[i]+right.xeo)*right.Rec*right.L[i].transpose();
-			MatrixXd Lt_right(12*N,2);
-			Lt_right << Sn*A, -Sn*A, Sn*B, -Sn*C;
-			A_v += gamma_v*Lt_right*Lt_right.transpose();
-			b_v += gamma_v*Lt_right*(right.zeta[i]-right.zeta_d[i]);
-		}
+	void set_vis_pars () {
+		left.set_vis_pars();
+		right.set_vis_pars();
 	}
-	*/
+	
+	void update_vis_pars () {
+		left.update_vis_pars();
+		right.update_vis_pars();
+		A_v.block(0,0,3*N,3*N) = 5.0*kroneckerProduct(Snn,left.Lu.transpose()*left.Lu);
+		A_v.block(0,6*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,left.Lu.transpose()*left.Lo);
+		A_v.block(3*N,3*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,right.Lu.transpose()*right.Lu);
+		A_v.block(3*N,9*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,right.Lu.transpose()*right.Lo);
+		A_v.block(6*N,0,3*N,3*N) = 5.0*kroneckerProduct(Snn,left.Lo.transpose()*left.Lu);
+		A_v.block(6*N,6*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,left.Lo.transpose()*left.Lo);
+		A_v.block(9*N,3*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,right.Lo.transpose()*right.Lu);
+		A_v.block(9*N,9*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,right.Lo.transpose()*right.Lo);
+		b_v.segment(0,3*N) = Sn*left.Lu.transpose()*(left.zeta-left.zeta_d);
+		b_v.segment(3*N,3*N) = Sn*right.Lu.transpose()*(right.zeta-right.zeta_d);
+		b_v.segment(6*N,3*N) = Sn*left.Lo.transpose()*(left.zeta-left.zeta_d);
+		b_v.segment(9*N,3*N) = Sn*right.Lo.transpose()*(right.zeta-right.zeta_d);
+	}
+	
 	inline double cost () {
 		return left.cost()+right.cost();
 	}
