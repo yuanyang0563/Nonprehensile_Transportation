@@ -31,37 +31,33 @@ int main(int argc, char *argv[])
 	arms.left.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
 	arms.right.xec << 0.045, -0.02, 0.01;
 	arms.right.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
-	// set the coordinates of marker corners in the object frame
-	arms.left.p[0] << -0.04, -0.075, -0.04;
-	arms.left.p[1] <<  0.04, -0.075, -0.04;
-	arms.left.p[2] <<  0.04, -0.075,  0.04;
-	arms.left.p[3] << -0.04, -0.075,  0.04;
-	arms.right.p[0] <<  0.04, 0.075, -0.04;
-	arms.right.p[1] << -0.04, 0.075, -0.04;
-	arms.right.p[2] << -0.04, 0.075,  0.04;
-	arms.right.p[3] <<  0.04, 0.075,  0.04;
-	// set the desired image coordinates
-	arms.left.zeta_d[0] << -0.31,  0.31;
-	arms.left.zeta_d[1] <<  0.31,  0.31;
-	arms.left.zeta_d[2] <<  0.31, -0.31;
-	arms.left.zeta_d[3] << -0.31, -0.31;
-	arms.right.zeta_d[0] << -0.31,  0.31;
-	arms.right.zeta_d[1] <<  0.31,  0.31;
-	arms.right.zeta_d[2] <<  0.31, -0.31;
-	arms.right.zeta_d[3] << -0.31, -0.31;
 	// set the poses of arm bases
 	arms.left.xb <<  0, -0.44, 0.0;
 	arms.left.Rb << cos(3.0*M_PI/4.0), -sin(3.0*M_PI/4.0), 0.0, sin(3.0*M_PI/4.0), cos(3.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
-	arms.right.xb << 0, 0.44, 0.0;
+	arms.right.xb << 0,  0.44, 0.0;
 	arms.right.Rb << cos(M_PI/4.0), -sin(M_PI/4.0), 0.0, sin(M_PI/4.0), cos(M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
 	// set the desired poses of arms
 	arms.left.xd <<  0.35, -0.2275, 0.20;
 	arms.left.Rd << 1.0,  0.0, 0.0,  0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
 	arms.right.xd << 0.35, 0.2275, 0.20;
 	arms.right.Rd << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0;
-	// set parameters for the objective functions
+	double mode;
+	if (argc<2) {
+		cout << "Please set the control mode:" << endl;
+		cout << "0 for visual servoing, 1 for target reaching." << endl;
+		return 1;
+	} else {
+		mode = stod(argv[1]);
+		if (mode==0.0 || mode==1.0)
+			ros::param::set("/control_mode",mode);
+		else {
+			ROS_ERROR("Wrong mode.");
+			return 1;
+		}
+	}
 	arms.set_tar_pars();
 	arms.set_syn_pars();
+	arms.set_vis_pars();
 	// set upper and lower bounds of linear and angular velocities
 	double uof_ub[24*N], uof_lb[24*N];
 	for (int i=0; i<24*N; ++i) {
@@ -88,56 +84,60 @@ int main(int argc, char *argv[])
 		arms.update_tar_pars();
 		arms.update_syn_pars();
 		arms.update_vis_pars();
-		try {
-			// create a gurobi model and add optimization variables uof with lower and upper bounds
-			GRBModel model = GRBModel(env);
-			GRBVar *uof = model.addVars(uof_lb,uof_ub,NULL,NULL,NULL,24*N);
-			// set the objective function
-			GRBQuadExpr obj = 0.0;
-			for (int i=0; i<12*N; ++i) {
-				for (int j=0; j<12*N; ++j)
-					obj += dt*uof[i]*(arms.A_d(i,j)+arms.A_s(i,j)+arms.A_v(i,j))*uof[j];
-				obj += 2.0*(arms.b_d(i)+arms.b_s(i)+arms.b_v(i))*uof[i];
-			}
-			model.setObjective(obj);
-			// add motion constraints on the transported object
-			for (int i=0; i<6*N; ++i) {
-				GRBLinExpr cst = 0.0;
-				for (int j=0; j<3*N; ++j)
-					cst += arms.left.Hu(i,j-0*N)*uof[j];
-				for (int j=3*N; j<6*N; ++j)
-					cst += arms.right.Hu(i,j-3*N)*uof[j];
-				for (int j=6*N; j<9*N; ++j)
-					cst -= arms.left.Ho(i,j-6*N)*uof[j];
-				for (int j=9*N; j<12*N; ++j)
-					cst -= arms.right.Ho(i,j-9*N)*uof[j];
-				for (int j=12*N; j<24*N; ++j) {
-					cst -= dt*arms.left.Hf(i,j-12*N)*uof[j];
-					cst -= dt*arms.right.Hf(i,j-12*N)*uof[j];
+		MatrixXd A_obj = mode*arms.A_d+(1.0-mode)*arms.A_v;
+		MatrixXd b_obj = mode*arms.b_d+(1.0-mode)*arms.b_v;
+		if (arms.left.getImage && arms.right.getImage) {
+			try {
+				// create a gurobi model and add optimization variables uof with lower and upper bounds
+				GRBModel model = GRBModel(env);
+				GRBVar *uof = model.addVars(uof_lb,uof_ub,NULL,NULL,NULL,24*N);
+				// set the objective function
+				GRBQuadExpr obj = 0.0;
+				for (int i=0; i<12*N; ++i) {
+					for (int j=0; j<12*N; ++j)
+						obj += dt*uof[i]*A_obj(i,j)*uof[j];
+					obj += 2.0*b_obj(i)*uof[i];
 				}
-				model.addConstr(cst==arms.left.h(i)+arms.right.h(i));
-			}
-			// add constraints on the contact forces between the object and the tray
-			for (int n=0; n<N; ++n) {
-				for (int i=0; i<4; ++i) {
-					int ind = 12*N+12*n+3*i;
-					GRBQuadExpr cstc = uof[ind+0]*uof[ind+0]+uof[ind+1]*uof[ind+1]-mu*mu*uof[ind+2]*uof[ind+2];
-					model.addQConstr(cstc<=0.0);
-					GRBLinExpr cstn = uof[ind+2];
-					model.addConstr(cstn>=epsilon);
+				model.setObjective(obj);
+				// add motion constraints on the transported object
+				for (int i=0; i<6*N; ++i) {
+					GRBLinExpr cst = 0.0;
+					for (int j=0; j<3*N; ++j)
+						cst += arms.left.Hu(i,j-0*N)*uof[j];
+					for (int j=3*N; j<6*N; ++j)
+						cst += arms.right.Hu(i,j-3*N)*uof[j];
+					for (int j=6*N; j<9*N; ++j)
+						cst -= arms.left.Ho(i,j-6*N)*uof[j];
+					for (int j=9*N; j<12*N; ++j)
+						cst -= arms.right.Ho(i,j-9*N)*uof[j];
+					for (int j=12*N; j<24*N; ++j) {
+						cst -= dt*arms.left.Hf(i,j-12*N)*uof[j];
+						cst -= dt*arms.right.Hf(i,j-12*N)*uof[j];
+					}
+					model.addConstr(cst==arms.left.h(i)+arms.right.h(i));
 				}
+				// add constraints on the contact forces between the object and the tray
+				for (int n=0; n<N; ++n) {
+					for (int i=0; i<4; ++i) {
+						int ind = 12*N+12*n+3*i;
+						GRBQuadExpr cstc = uof[ind+0]*uof[ind+0]+uof[ind+1]*uof[ind+1]-mu*mu*uof[ind+2]*uof[ind+2];
+						model.addQConstr(cstc<=0.0);
+						GRBLinExpr cstn = uof[ind+2];
+						model.addConstr(cstn>=epsilon);
+					}
+				}
+				// solve and set the Cartesian velocity control inputs
+				model.optimize();
+				arms.left.upsilon << uof[0].get(GRB_DoubleAttr_X), uof[1].get(GRB_DoubleAttr_X), uof[2].get(GRB_DoubleAttr_X);
+				arms.right.upsilon << uof[3*N].get(GRB_DoubleAttr_X), uof[3*N+1].get(GRB_DoubleAttr_X), uof[3*N+2].get(GRB_DoubleAttr_X);
+				arms.left.omega << uof[6*N].get(GRB_DoubleAttr_X), uof[6*N+1].get(GRB_DoubleAttr_X), uof[6*N+2].get(GRB_DoubleAttr_X);
+				arms.right.omega << uof[9*N].get(GRB_DoubleAttr_X), uof[9*N+1].get(GRB_DoubleAttr_X), uof[9*N+2].get(GRB_DoubleAttr_X);
+			} catch(GRBException e) {
+				cout << "No solution. Retry." << endl;
+				// reduce the prediction horizon (N) or increase the damping (alpha) in the objective.
+			} catch(...) {
+				cout << "Exception during optimization." << endl;
 			}
-			// solve and set the Cartesian velocity control inputs
-			model.optimize();
-			arms.left.upsilon << uof[0].get(GRB_DoubleAttr_X), uof[1].get(GRB_DoubleAttr_X), uof[2].get(GRB_DoubleAttr_X);
-			arms.right.upsilon << uof[3*N].get(GRB_DoubleAttr_X), uof[3*N+1].get(GRB_DoubleAttr_X), uof[3*N+2].get(GRB_DoubleAttr_X);
-			arms.left.omega << uof[6*N].get(GRB_DoubleAttr_X), uof[6*N+1].get(GRB_DoubleAttr_X), uof[6*N+2].get(GRB_DoubleAttr_X);
-			arms.right.omega << uof[9*N].get(GRB_DoubleAttr_X), uof[9*N+1].get(GRB_DoubleAttr_X), uof[9*N+2].get(GRB_DoubleAttr_X);
-		} catch(GRBException e) {
-			cout << "No solution. Retry." << endl;
-			// reduce the prediction horizon (N) or increase the damping (alpha) in the objective.
-		} catch(...) {
-			cout << "Exception during optimization." << endl;
 		}
 		arms.move_one_step();
 		// count the time spent in solving the control per round and the maximum time

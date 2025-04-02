@@ -48,16 +48,7 @@ int main(int argc, char *argv[])
 		// compute control and drive the arm
 		if (arm.getImage) {
 			arm.update_vis_pars();
-			MatrixXd L(8,6);
-			for (int i=0; i<4; ++i) {
-				L.row(2*i+0) = arm.L[i].row(0);
-				L.row(2*i+1) = arm.L[i].row(1);
-			}
-			L = L*arm.Tv;
-			VectorXd Zeta(8), Zeta_d(8);
-			Zeta << arm.zeta[0], arm.zeta[1], arm.zeta[2], arm.zeta[3];
-			Zeta_d << arm.zeta_d[0], arm.zeta_d[1], arm.zeta_d[2], arm.zeta_d[3];
-			VectorXd vel = 3.0*(L.transpose()*L).inverse()*L.transpose()*(Zeta_d-Zeta);
+			VectorXd vel = 3.0*(arm.Lm.transpose()*arm.Lm).inverse()*arm.Lm.transpose()*(arm.zeta_d-arm.zeta);
 			arm.upsilon = mode*(arm.xd-arm.x)+(1.0-mode)*vel.head(3);
 			arm.omega = mode*skewVec(arm.Rd*arm.R.transpose())+(1.0-mode)*vel.tail(3);
 		}

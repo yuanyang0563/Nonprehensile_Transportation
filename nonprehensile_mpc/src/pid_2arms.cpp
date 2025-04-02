@@ -64,22 +64,8 @@ int main(int argc, char *argv[])
 		if (arms.left.getImage && arms.right.getImage) {
 			arms.left.update_vis_pars();
 			arms.right.update_vis_pars();
-			MatrixXd L_left(8,6), L_right(8,6);
-			for (int i=0; i<4; ++i) {
-				L_left.row(2*i+0) = arms.left.L[i].row(0);
-				L_left.row(2*i+1) = arms.left.L[i].row(1);
-				L_right.row(2*i+0) = arms.right.L[i].row(0);
-				L_right.row(2*i+1) = arms.right.L[i].row(1);
-			}
-			L_left = L_left*arms.left.Tv;
-			L_right = L_right*arms.right.Tv;
-			VectorXd Zeta_l(8), Zeta_ld(8), Zeta_r(8), Zeta_rd(8);
-			Zeta_l << arms.left.zeta[0], arms.left.zeta[1], arms.left.zeta[2], arms.left.zeta[3];
-			Zeta_ld << arms.left.zeta_d[0], arms.left.zeta_d[1], arms.left.zeta_d[2], arms.left.zeta_d[3];
-			Zeta_r << arms.right.zeta[0], arms.right.zeta[1], arms.right.zeta[2], arms.right.zeta[3];
-			Zeta_rd << arms.right.zeta_d[0], arms.right.zeta_d[1], arms.right.zeta_d[2], arms.right.zeta_d[3];
-			VectorXd vel_left = 5.0*(L_left.transpose()*L_left).inverse()*L_left.transpose()*(Zeta_ld-Zeta_l);
-			VectorXd vel_right = 5.0*(L_right.transpose()*L_right).inverse()*L_right.transpose()*(Zeta_rd-Zeta_r);
+			VectorXd vel_left = 5.0*(arms.left.Lm.transpose()*arms.left.Lm).inverse()*arms.left.Lm.transpose()*(arms.left.zeta_d-arms.left.zeta);
+			VectorXd vel_right = 5.0*(arms.right.Lm.transpose()*arms.right.Lm).inverse()*arms.right.Lm.transpose()*(arms.right.zeta_d-arms.right.zeta);
 			arms.left.upsilon = mode*(arms.left.xd-arms.left.x)+(1.0-mode)*vel_left.head(3);
 			arms.left.omega = mode*skewVec(arms.left.Rd*arms.left.R.transpose())+(1.0-mode)*vel_left.tail(3);
 			arms.right.upsilon = mode*(arms.right.xd-arms.right.x)+(1.0-mode)*vel_right.head(3);
