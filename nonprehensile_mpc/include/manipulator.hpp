@@ -20,8 +20,8 @@ class manipulator {
 	VectorXd b_d, b_v, eta, lambda, h;
 	MatrixXd J, A_d, A_v, Hu, Ho, Hf, Tu, To, L, Lu, Lo, Lm;
 	Vector3d upsilon, omega;
-	Vector3d x, xb, xeo, xec, xd;
-	Matrix3d R, Rb, Reo, Rec, Rd;
+	Vector3d x, xb, xeo, xec, xd, x0;
+	Matrix3d R, Rb, Reo, Rec, Rd, R0;
 	bool getImage;
 	vpDisplay *display;
 	vpDetectorAprilTag detector;
@@ -127,7 +127,7 @@ class manipulator {
 	}
 	
 	void set_tar_pars () {
-		A_d.block(0,0,3*N,3*N) = kappa_u*kroneckerProduct(Snn,Matrix3d::Identity())+alpha_u*MatrixXd::Identity(3*N,3*N);
+		A_d.block(0*N,0*N,3*N,3*N) = kappa_u*kroneckerProduct(Snn,Matrix3d::Identity())+alpha_u*MatrixXd::Identity(3*N,3*N);
 		A_d.block(3*N,3*N,3*N,3*N) = alpha_o*MatrixXd::Identity(3*N,3*N);
 		Hu.block(0,0,3*N,3*N) = m*kroneckerProduct(Gamma,Matrix3d::Identity());
 	}
@@ -154,9 +154,9 @@ class manipulator {
 		Lu = L*Tu;
 		Lo = L*To;
 		Lm << Lu, Lo;
-		A_v.block(0,0,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lu.transpose()*Lu);
-		A_v.block(0,3*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lu.transpose()*Lo);
-		A_v.block(3*N,0,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lo.transpose()*Lu);
+		A_v.block(0*N,0*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lu.transpose()*Lu);
+		A_v.block(0*N,3*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lu.transpose()*Lo);
+		A_v.block(3*N,0*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lo.transpose()*Lu);
 		A_v.block(3*N,3*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lo.transpose()*Lo);
 		b_v.head(3*N) = Sn*Lu.transpose()*(zeta-zeta_d);
 		b_v.tail(3*N) = Sn*Lo.transpose()*(zeta-zeta_d);
