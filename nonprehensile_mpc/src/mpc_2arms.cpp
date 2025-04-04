@@ -84,8 +84,8 @@ int main(int argc, char *argv[])
 		arms.update_tar_pars();
 		arms.update_syn_pars();
 		arms.update_vis_pars();
-		MatrixXd A_obj = mode*arms.A_d+(1.0-mode)*arms.A_v;
-		MatrixXd b_obj = mode*arms.b_d+(1.0-mode)*arms.b_v;
+		MatrixXd A_obj = mode*(arms.A_d+arms.A_s)+(1.0-mode)*(arms.A_v+arms.A_s);
+		MatrixXd b_obj = mode*(arms.b_d+arms.b_s)+(1.0-mode)*(arms.b_v+arms.b_s);
 		if (arms.left.getImage && arms.right.getImage) {
 			try {
 				// create a gurobi model and add optimization variables uof with lower and upper bounds

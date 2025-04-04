@@ -31,9 +31,11 @@ double kappa_u = 1.0;
 double alpha_u = 300.0;
 double kappa_o = 1.0;
 double alpha_o = 300.0;
-double rho_u = 0.0;
-double rho_o = 0.0;
-double gamma_v = 0.05;
+double rho_u = 0.1;
+double beta_u = 5.0;
+double rho_o = 0.1;
+double beta_o = 5.0;
+double gamma_v = 5.0;
 
 void init () {
   I.diagonal() << I1, I2, I3;
