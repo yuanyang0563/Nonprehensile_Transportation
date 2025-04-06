@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 			arm.update_vis_pars();
 			VectorXd vel = 3.0*(arm.Lm.transpose()*arm.Lm).inverse()*arm.Lm.transpose()*(arm.zeta_d-arm.zeta);
 			arm.upsilon = mode*(arm.xd-arm.x)+(1.0-mode)*vel.head(3);
-			arm.omega = mode*skewVec(arm.Rd*arm.R.transpose())+(1.0-mode)*vel.tail(3);
+			arm.omega = mode*arm.R.transpose()*skewVec(arm.Rd*arm.R.transpose())+(1.0-mode)*vel.tail(3);
 		}
 		arm.move_one_step();
 		// count the time spent in solving the control per round and the maximum time

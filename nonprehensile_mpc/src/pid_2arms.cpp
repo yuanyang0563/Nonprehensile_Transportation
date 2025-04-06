@@ -18,24 +18,24 @@ int main(int argc, char *argv[])
 	arms.right.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
 	arms.right.d << 0.1519, 0.0, 0.0, 0.11235, 0.08535, 0.0819;
 	// set the initial joint coordinates
-	arms.left.q <<  -M_PI, -1.0*M_PI/3.0,  M_PI/4.0, -5.0*M_PI/12.0, -M_PI/2.0,  M_PI/4.0;
+	arms.left.q  <<  -M_PI, -1.0*M_PI/3.0,  M_PI/4.0, -5.0*M_PI/12.0, -M_PI/2.0,  M_PI/4.0;
 	arms.right.q << -M_PI, -2.0*M_PI/3.0, -M_PI/4.0, -7.0*M_PI/12.0,  M_PI/2.0, -M_PI/4.0;
-	arms.left.xeo << 0.0, -0.2405, 0.025;
-	arms.left.Reo <<  1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
+	arms.left.xeo  << 0.0, -0.2405, 0.025;
+	arms.left.Reo  <<  1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
 	arms.right.xeo << 0.0, -0.2405, 0.025;
 	arms.right.Reo << -1.0, 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, 0.0, -1.0;
-	arms.left.xec << 0.045, -0.02, 0.01;
-	arms.left.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
+	arms.left.xec  << 0.045, -0.02, 0.01;
+	arms.left.Rec  << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
 	arms.right.xec << 0.045, -0.02, 0.01;
 	arms.right.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
-	arms.left.xb <<  0, -0.44, 0.0;
-	arms.left.Rb << cos(3.0*M_PI/4.0), -sin(3.0*M_PI/4.0), 0.0, sin(3.0*M_PI/4.0), cos(3.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
+	arms.left.xb  <<  0, -0.44, 0.0;
+	arms.left.Rb  << cos(3.0*M_PI/4.0), -sin(3.0*M_PI/4.0), 0.0, sin(3.0*M_PI/4.0), cos(3.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
 	arms.right.xb << 0, 0.44, 0.0;
 	arms.right.Rb << cos(M_PI/4.0), -sin(M_PI/4.0), 0.0, sin(M_PI/4.0), cos(M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
-	arms.left.xd <<  0.35, -0.2275, 0.20;
-	arms.left.Rd << 1.0,  0.0, 0.0,  0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
-	arms.right.xd << 0.35,  0.2275, 0.20;
-	arms.right.Rd << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0;
+	arms.left.xd  <<  0.35, -0.2275, 0.20;
+	arms.left.Rd  <<  1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
+	arms.right.xd <<  0.35,  0.2275, 0.20;
+	arms.right.Rd << -1.0, 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, 0.0, -1.0;
 	double mode;
 	if (argc<2) {
 		cout << "Please set the control mode:" << endl;
@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
 			VectorXd vel_left = 5.0*(arms.left.Lm.transpose()*arms.left.Lm).inverse()*arms.left.Lm.transpose()*(arms.left.zeta_d-arms.left.zeta);
 			VectorXd vel_right = 5.0*(arms.right.Lm.transpose()*arms.right.Lm).inverse()*arms.right.Lm.transpose()*(arms.right.zeta_d-arms.right.zeta);
 			arms.left.upsilon = mode*(arms.left.xd-arms.left.x)+(1.0-mode)*vel_left.head(3);
-			arms.left.omega = mode*skewVec(arms.left.Rd*arms.left.R.transpose())+(1.0-mode)*vel_left.tail(3);
+			arms.left.omega = mode*arms.left.R.transpose()*skewVec(arms.left.Rd*arms.left.R.transpose())+(1.0-mode)*vel_left.tail(3);
 			arms.right.upsilon = mode*(arms.right.xd-arms.right.x)+(1.0-mode)*vel_right.head(3);
-			arms.right.omega = mode*skewVec(arms.right.Rd*arms.right.R.transpose())+(1.0-mode)*vel_right.tail(3);
+			arms.right.omega = mode*arms.right.R.transpose()*skewVec(arms.right.Rd*arms.right.R.transpose())+(1.0-mode)*vel_right.tail(3);
 		}
 		arms.move_one_step();
 		// count the time spent in solving the control per round and the maximum time
