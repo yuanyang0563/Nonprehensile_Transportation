@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
 {
 	init();
 	// set ROS
-	ros::init(argc,argv,"pid_controller");
+	ros::init(argc,argv,"mpc_controller");
 	// create the arms object
 	manipulators arms("arm_l","arm_r");
 	// set the DH parameters of arms
