@@ -61,8 +61,10 @@ int main(int argc, char *argv[])
 		// get the current robot poses and Jacobians
 		arm.get_pose_jacobian();
 		// get the pose error and stops the simulation when the error is small enough
-		if (arm.cost()<1e-5)
+		if (arm.cost()<1e-5) {
+			cout << "Target pose reached!" << endl;
 			break;
+		}
 		// update parameters for the optimal control problem
 		arm.update_tar_pars();
 		arm.update_vis_pars();
@@ -122,7 +124,6 @@ int main(int argc, char *argv[])
     		if (t_duration.count()<dt)
     			this_thread::sleep_for(chrono::duration<double>(dt-t_duration.count()));
 	}
-	cout << "Target pose reached!" << endl;
 	cout << "Maximum solution time: " << t_max << " s." << endl;
 
 	return 0;

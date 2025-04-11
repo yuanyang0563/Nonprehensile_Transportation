@@ -50,6 +50,11 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 	}
+	arms.get_pose_jacobian();
+	arms.left.x0 = arms.left.x;
+	arms.left.R0 = arms.left.R;
+	arms.right.x0 = arms.right.x;
+	arms.right.R0 = arms.right.R;
 	arms.left.set_vis_pars();
 	arms.right.set_vis_pars();
 	while (ros::ok()) {
@@ -58,18 +63,28 @@ int main(int argc, char *argv[])
 		// get the current robot poses and Jacobians
 		arms.get_pose_jacobian();
 		// get the pose error and stops the simulation when the error is small enough
-		if (arms.cost()<1e-5)
+		if (arms.cost()<1e-5) {
+			cout << "Target pose reached!" << endl;
 			break;
+		}
 		// compute controls and drive the arms
 		if (arms.left.getImage && arms.right.getImage) {
 			arms.left.update_vis_pars();
 			arms.right.update_vis_pars();
-			VectorXd vel_left = 5.0*(arms.left.Lm.transpose()*arms.left.Lm).inverse()*arms.left.Lm.transpose()*(arms.left.zeta_d-arms.left.zeta);
-			VectorXd vel_right = 5.0*(arms.right.Lm.transpose()*arms.right.Lm).inverse()*arms.right.Lm.transpose()*(arms.right.zeta_d-arms.right.zeta);
-			arms.left.upsilon = mode*(arms.left.xd-arms.left.x)+(1.0-mode)*vel_left.head(3);
-			arms.left.omega = mode*arms.left.R.transpose()*skewVec(arms.left.Rd*arms.left.R.transpose())+(1.0-mode)*vel_left.tail(3);
-			arms.right.upsilon = mode*(arms.right.xd-arms.right.x)+(1.0-mode)*vel_right.head(3);
-			arms.right.omega = mode*arms.right.R.transpose()*skewVec(arms.right.Rd*arms.right.R.transpose())+(1.0-mode)*vel_right.tail(3);
+			VectorXd tar_ul  = 1.0*(arms.left.xd-arms.left.x);
+			VectorXd tar_ur  = 1.0*(arms.right.xd-arms.right.x);
+			VectorXd tar_ol  = 1.0*skewVec(arms.left.Rd*arms.left.R.transpose());
+			VectorXd tar_or  = 1.0*skewVec(arms.right.Rd*arms.right.R.transpose());
+			VectorXd syn_ul  = 5.0*(arms.right.x-arms.left.x-0.5*(arms.left.R*arms.left.R0.transpose()+arms.right.R*arms.right.R0.transpose())*(arms.right.x0-arms.left.x0));
+			VectorXd syn_ur  = 5.0*(arms.left.x-arms.right.x-0.5*(arms.left.R*arms.left.R0.transpose()+arms.right.R*arms.right.R0.transpose())*(arms.left.x0-arms.right.x0));
+			VectorXd syn_ol  = 5.0*skewVec(arms.right.R*arms.right.R0.transpose()*arms.left.R0*arms.left.R.transpose());
+			VectorXd syn_or  = 5.0*skewVec(arms.left.R*arms.left.R0.transpose()*arms.right.R0*arms.right.R.transpose());
+			VectorXd vis_vl  = 5.0*(arms.left.Lm.transpose()*arms.left.Lm).inverse()*arms.left.Lm.transpose()*(arms.left.zeta_d-arms.left.zeta);
+			VectorXd vis_vr  = 5.0*(arms.right.Lm.transpose()*arms.right.Lm).inverse()*arms.right.Lm.transpose()*(arms.right.zeta_d-arms.right.zeta);
+			arms.left.upsilon  = mode*tar_ul+(1.0-mode)*vis_vl.head(3)+syn_ul;
+			arms.left.omega  = arms.left.R.transpose()*(mode*tar_ol+syn_ol)+(1.0-mode)*vis_vl.tail(3);
+			arms.right.upsilon = mode*tar_ur+(1.0-mode)*vis_vr.head(3)+syn_ur;
+			arms.right.omega = arms.right.R.transpose()*(mode*tar_or+syn_or)+(1.0-mode)*vis_vr.tail(3);
 		}
 		arms.move_one_step();
 		// count the time spent in solving the control per round and the maximum time
@@ -80,7 +95,6 @@ int main(int argc, char *argv[])
     		if (t_duration.count()<dt)
     			this_thread::sleep_for(chrono::duration<double>(dt-t_duration.count()));
 	}
-	cout << "Target pose reached!" << endl;
 	cout << "Maximum solution time: " << t_max << " s." << endl;
 	
 	return 0;

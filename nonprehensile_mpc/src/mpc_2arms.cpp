@@ -78,14 +78,16 @@ int main(int argc, char *argv[])
 		// get the current robot poses and Jacobians
 		arms.get_pose_jacobian();
 		// get the pose error and stops the simulation when the error is small enough
-		if (arms.cost()<1e-5)
+		if (arms.cost()<1e-5) {
+			cout << "Target pose reached!" << endl;
 			break;
+		}
 		// update parameters for the optimal control problem
 		arms.update_tar_pars();
 		arms.update_syn_pars();
 		arms.update_vis_pars();
-		MatrixXd A_obj = mode*(arms.A_d+arms.A_s)+(1.0-mode)*(arms.A_v+arms.A_s);
-		MatrixXd b_obj = mode*(arms.b_d+arms.b_s)+(1.0-mode)*(arms.b_v+arms.b_s);
+		MatrixXd A_obj = mode*arms.A_d+(1.0-mode)*arms.A_v+arms.A_s;
+		MatrixXd b_obj = mode*arms.b_d+(1.0-mode)*arms.b_v+arms.b_s;
 		if (arms.left.getImage && arms.right.getImage) {
 			try {
 				// create a gurobi model and add optimization variables uof with lower and upper bounds
@@ -148,7 +150,6 @@ int main(int argc, char *argv[])
     		if (t_duration.count()<dt)
     			this_thread::sleep_for(chrono::duration<double>(dt-t_duration.count()));
 	}
-	cout << "Target pose reached!" << endl;
 	cout << "Maximum solution time: " << t_max << " s." << endl;
 	
 	return 0;
