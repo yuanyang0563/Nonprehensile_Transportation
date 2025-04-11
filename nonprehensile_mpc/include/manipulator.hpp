@@ -18,7 +18,7 @@ class manipulator {
   	VectorXd a, alpha, d;
 	VectorXd q, dq;
 	VectorXd b_d, b_v, eta, lambda, h;
-	MatrixXd J, A_d, A_v, Hu, Ho, Hf, Tu, To, L, Lu, Lo, Lm;
+	MatrixXd A_d, A_v, J, Hu, Ho, Hf, Tu, To, L, Lu, Lo, Lm;
 	Vector3d upsilon, omega;
 	Vector3d x, xb, xeo, xec, xd, x0;
 	Matrix3d R, Rb, Reo, Rec, Rd, R0;
