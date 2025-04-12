@@ -7,7 +7,7 @@ int main (int argc, char **argv)
 	ros::init(argc,argv,"cam_r");
 	camera realsense("arm_r");
 	try {
-		realsense.getImage();
+		realsense.getFeature();
 	} catch (const vpException &e) {
 		cerr << "Catch an exception: " << e.getMessage() << endl;
 		return EXIT_FAILURE;
