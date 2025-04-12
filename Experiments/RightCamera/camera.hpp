@@ -47,7 +47,7 @@ class camera {
   		delete display;
   	}
   	
-  	void getImage () {
+  	void getFeature () {
 		while (ros::ok()) {
 			g.acquire(image_color);
 			vpImageConvert::convert(image_color,image_grey);
