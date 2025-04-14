@@ -51,11 +51,13 @@ class camera {
   		while (ros::ok()) {
   			g.acquire(image_color);
   			vpImageConvert::convert(image_color,image_grey);
-  			detector.detect(image_grey);
-  			tagsCorners = detector.getTagsCorners();
-  			for (int i=0; i<4; ++i)
-  				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],msg.data[2*i+0],msg.data[2*i+1]);
-  			pub.publish(msg);
+  			bool status = detector.detect(image_grey);
+  			if (status) {
+  				tagsCorners = detector.getTagsCorners();
+  				for (int i=0; i<4; ++i)
+  					vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],msg.data[2*i+0],msg.data[2*i+1]);
+  				pub.publish(msg);
+  			}
   			vpDisplay::display(image_color);
   			vpDisplay::flush(image_color);
   			if (vpDisplay::getClick(image_color,false))
