@@ -23,6 +23,7 @@ class manipulator {
 	vector<Matrix3d> Rs;
 	bool getJoint, getFeature;
 	VectorXd zeta, zeta_d;
+	MatrixXd zeta_h;
 	
 	manipulator (string arm) {
 		a = VectorXd(6);
@@ -57,6 +58,7 @@ class manipulator {
 		getFeature = false;
 		zeta = VectorXd(8);
 		zeta_d = VectorXd(8);
+		zeta_h = MatrixXd::Zero(8,8);
 	}
 	
 	void get_pose_jacobian () {
@@ -103,14 +105,22 @@ class manipulator {
 	
 	void image_callback (const std_msgs::Float64MultiArray::ConstPtr& msg) {
 		zeta << msg->data[0], msg->data[1], msg->data[2], msg->data[3], msg->data[4], msg->data[5], msg->data[6], msg->data[7];
+		if (getFeature) {
+			for (int i=7; i>0; --i)
+				zeta_h.col(i) = zeta_h.col(i-1);
+			zeta_h.col(0) = zeta;
+		} else {
+			zeta_d = zeta;
+			for (int i=0; i<8; ++i)
+				zeta_h.col(i) = zeta;
+			getFeature = !getFeature;
+		}
+		zeta = 0.125*zeta_h.rowwise().sum();
 		for (int i=0; i<4; ++i) {
 			L.row(2*i+0) << -10.0,   0.0, 10.0*zeta(2*i+0), zeta(2*i+0)*zeta(2*i+1), -1.0-zeta(2*i+0)*zeta(2*i+0),  zeta(2*i+1);
 			L.row(2*i+1) <<   0.0, -10.0, 10.0*zeta(2*i+1), 1.0+zeta(2*i+1)*zeta(2*i+1), -zeta(2*i+0)*zeta(2*i+1), -zeta(2*i+0);
 		}
-		if (!getFeature) {
-			zeta_d = zeta;
-			getFeature = !getFeature;
-		}
+		
 	}
 	
 	void plan_path (int num) {
