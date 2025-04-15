@@ -19,24 +19,38 @@ int main(int argc, char *argv[])
 	arms.right.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
 	arms.right.d << 0.15185, 0.0, 0.0, 0.13105, 0.08535, 0.0921;
 	// set configuration parameters
-	arms.left.xeo  << 0.0, -0.18, 0.05;
-	arms.left.Reo  << 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
-	arms.right.xeo << 0.0, -0.18, 0.05;
-	arms.right.Reo << 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
-	arms.left.xec  << 0.045, -0.02, 0.01;
-	arms.left.Rec  << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
-	arms.right.xec << 0.045, -0.02, 0.01;
-	arms.right.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
-	arms.left.xb  << 0.0, -0.44, 0.0;
-	arms.left.Rb  << cos(3.0*M_PI/4.0), -sin(3.0*M_PI/4.0), 0.0, sin(3.0*M_PI/4.0), cos(3.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
-	arms.right.xb << 0.0,  0.44, 0.0;
-	arms.right.Rb << cos(1.0*M_PI/4.0), -sin(1.0*M_PI/4.0), 0.0, sin(1.0*M_PI/4.0), cos(1.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
-	arms.left.xd  << 0.4308, -0.2616, 0.10;
-	arms.left.Rd  << cos(M_PI/4.0), sin(M_PI/4.0), 0.0, sin(M_PI/4.0), -cos(M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
-	arms.right.xd << 0.1692,  0.0000, 0.10;
-	arms.right.Rd << cos(M_PI/4.0), sin(M_PI/4.0), 0.0, sin(M_PI/4.0), -cos(M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
+	arms.left.xeo  <<  0.0, -0.20, -0.05;
+	arms.left.Reo  <<  1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
+	arms.right.xeo <<  0.0,  0.20, -0.05;
+	arms.right.Reo <<  1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
+	arms.left.xec  <<  0.035,  0.050, -0.075;
+	arms.left.Rec  <<  0.0, -1.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0;
+	arms.right.xec << -0.035, -0.050, -0.075;
+	arms.right.Rec <<  0.0,  1.0, 0.0, 0.0, 0.0,  1.0, 1.0, 0.0, 0.0;
+	arms.left.xb   <<  0.0, -0.44, 0.0;
+	arms.left.Rb   <<  cos(3.0*M_PI/4.0), -sin(3.0*M_PI/4.0), 0.0, sin(3.0*M_PI/4.0), cos(3.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
+	arms.right.xb  <<  0.0,  0.44, 0.0;
+	arms.right.Rb  <<  cos(1.0*M_PI/4.0), -sin(1.0*M_PI/4.0), 0.0, sin(1.0*M_PI/4.0), cos(1.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
+	arms.left.xd   <<  0.4308, -0.2616, 0.15;
+	arms.left.Rd   <<  cos(M_PI/4.0), sin(M_PI/4.0), 0.0, sin(M_PI/4.0), -cos(M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
+	arms.right.xd  <<  0.1692,  0.0000, 0.15;
+	arms.right.Rd  <<  cos(M_PI/4.0), sin(M_PI/4.0), 0.0, sin(M_PI/4.0), -cos(M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
+	double mode;
+	if (argc<2) {
+		cout << "Please set the control mode:" << endl;
+		cout << "0 for visual servoing." << endl;
+		cout << "1 for target reaching." << endl;
+		cout << "2 for combined control." << endl;
+		return 1;
+	} else {
+		mode = stod(argv[1]);
+		if (mode!=0.0 && mode!=1.0 && mode!=2.0) {
+			cout << "Wrong mode." << endl;
+			return 1;
+		}
+	}
 	arms.set_tar_pars();
-	arms.set_syn_pars();
+	arms.set_vis_pars();
 	// set upper and lower bounds of linear and angular velocities
 	double uof_ub[24*N], uof_lb[24*N];
 	for (int i=0; i<24*N; ++i) {
@@ -60,18 +74,29 @@ int main(int argc, char *argv[])
 		if (arms.getJoints) {
 			if (!arms.getPaths) {
 				arms.plan_paths(1);
+				arms.set_syn_pars();
 			} else {
-				if (arms.cost()<1e-5) {
+				if (arms.cost()<1e-4) {
 					if (arms.waypoint==1) {
 						cout << "Target pose reached!" << endl;
 						break;
 					}
-					arms.set_waypoints();
+					if (arms.left.getFeature && arms.right.getFeature)
+						arms.set_waypoints();
 				}
 				arms.update_tar_pars();
 				arms.update_syn_pars();
-				MatrixXd A_obj = arms.A_d;
-				MatrixXd b_obj = arms.b_d;
+				arms.update_vis_pars();
+				MatrixXd A_obj = arms.A_s;
+				VectorXd b_obj = arms.b_s;
+				if (mode==0.0 || mode==2.0) {
+					A_obj += arms.A_v;
+					b_obj += arms.b_v;
+				}
+				if (mode==1.0 || mode==2.0) {
+					A_obj += arms.A_d;
+					b_obj += arms.b_d;
+				}
 				try {
 					// create a gurobi model and add optimization variables uof with lower and upper bounds
 					GRBModel model = GRBModel(env);
@@ -119,7 +144,7 @@ int main(int argc, char *argv[])
 					arms.right.omega << uof[9*N].get(GRB_DoubleAttr_X), uof[9*N+1].get(GRB_DoubleAttr_X), uof[9*N+2].get(GRB_DoubleAttr_X);
 				} catch(GRBException e) {
 					cout << "No solution. Retry." << endl;
-					// reduce the prediction horizon (N) or increase the damping (alpha) in the objective.
+					// reduce the prediction horizon or increase the damping in the objective.
 					arms.left.upsilon.setZero();
 					arms.right.upsilon.setZero();
 					arms.left.omega.setZero();
