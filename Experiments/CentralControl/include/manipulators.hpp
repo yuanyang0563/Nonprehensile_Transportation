@@ -85,12 +85,6 @@ class manipulators {
 	}
 
 	void set_syn_pars () {
-		left.get_pose_jacobian();
-		right.get_pose_jacobian();
-		left.x0 = left.x;
-		left.R0 = left.R;
-		right.x0 = right.x;
-		right.R0 = right.R;
 		x0_lr = left.R0.transpose()*(right.x0-left.x0);
 		x0_rl = right.R0.transpose()*(left.x0-right.x0);
 		R0_lr = left.R0.transpose()*right.R0;

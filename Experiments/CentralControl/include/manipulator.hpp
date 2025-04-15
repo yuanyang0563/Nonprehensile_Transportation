@@ -11,6 +11,10 @@ class manipulator {
 	ros::Subscriber sub_js;
 	ros::Subscriber sub_if;
 	std_msgs::Float64MultiArray msg;
+	ros::Timer timer;
+	vector<double*> data;
+	stringstream file_name;
+	bool file_init;
 
   public:
   	VectorXd a, alpha, d, q, dq;
@@ -59,6 +63,16 @@ class manipulator {
 		zeta = VectorXd(8);
 		zeta_d = VectorXd(8);
 		zeta_h = MatrixXd::Zero(8,8);
+		timer = nh.createTimer(ros::Duration(0.01),&manipulator::store_data, this);
+		data.resize(20);
+		for (int i=0; i<6; ++i)
+			data[i] = &q(i);
+		for (int i=6; i<12; ++i)
+			data[i] = &dq(i-6);
+		for (int i=12; i<20; ++i)
+			data[i] = &zeta(i-12);
+		file_name << "../data/" << arm << "_" << time(0) << ".txt";
+		file_init = false;
 	}
 	
 	void get_pose_jacobian () {
@@ -172,6 +186,23 @@ class manipulator {
 	
 	inline double cost () {
 		return (xt-x).norm()-(Rt*R.transpose()).trace()+3.0;
+	}
+	
+	void store_data (const ros::TimerEvent& event) {
+		if (getFeature) {
+			ofstream data_stream;
+			if (!file_init) {
+				data_stream.open(file_name.str());
+				file_init = !file_init;
+			} else
+				data_stream.open(file_name.str(),ios_base::app);
+			data_stream << setiosflags(ios::fixed) << setprecision(2) << ros::Time::now().toSec();
+			vector<double*>::iterator it;
+			for (it=data.begin(); it!=data.end(); ++it)
+				data_stream << ", " << setprecision(3) << **it;
+			data_stream << endl;
+			data_stream.close();
+		}
 	}
 
 };

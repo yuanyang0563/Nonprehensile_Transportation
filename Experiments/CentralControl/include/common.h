@@ -14,6 +14,10 @@
 #include <visp3/detection/vpDetectorAprilTag.h>
 #include <chrono>
 #include <thread>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <ctime>
 
 using namespace std;
 using namespace Eigen;
