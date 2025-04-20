@@ -8,6 +8,7 @@
 #include <visp3/core/vpCameraParameters.h>
 #include <visp3/core/vpPixelMeterConversion.h>
 #include <visp3/detection/vpDetectorAprilTag.h>
+#include <opencv2/opencv.hpp>
 
 using namespace std;
 
@@ -27,6 +28,7 @@ class camera {
 	vpRealSense2 g;
 	rs2::config config;
 	bool getImage;
+	cv::Mat image_cv;
   	
   public:
   	camera (string name) {
@@ -43,6 +45,7 @@ class camera {
 		g.acquire(image_color);
 		cam = g.getCameraParameters(RS2_STREAM_COLOR,vpCameraParameters::perspectiveProjWithDistortion);
 		getImage = false;
+		image_cv = cv::Mat(1080,1920,CV_8UC1,cv::Scalar(255));
   	}
   	
   	~camera() {
@@ -51,7 +54,12 @@ class camera {
   	
   	void getFeature () {
 		while (ros::ok()) {
-			g.acquire(image_color);
+			g.acquire(image_color);			
+			vpImageConvert::convert(image_color,image_cv);
+			stringstream ss;
+			ss << "Time: " << setiosflags(ios::fixed) << setprecision(2) << ros::Time::now().toSec();
+			cv::putText(image_cv,ss.str(),cv::Point(50,100),cv::FONT_HERSHEY_SIMPLEX,1.5,cv::Scalar(0,255,0),2);
+			vpImageConvert::convert(image_cv,image_color);
 			vpDisplay::display(image_color);
 			vpImageConvert::convert(image_color,image_grey);
 			bool status = detector.detect(image_grey);
