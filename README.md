@@ -14,6 +14,8 @@ The length of the prediction horizon is set to $N=5$.
 
 In sumulations, only $7~ms$ on average are spent in solving the formulated optimization problems per round. Check it!
 
+In experiments, the maximum time spent in computing the conventional controls and the predictive controls are 0.12 seconds and 0.32 seconds per round. 
+
 ## Installation
 
 Installed **Gurobi 12.0**. Check ~/.bashrc and export environment variables **GUROBI_HOME**, **PATH** and **LD_LIBRARY_PATH** correctly.
