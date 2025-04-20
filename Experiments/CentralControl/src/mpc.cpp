@@ -31,9 +31,9 @@ int main(int argc, char *argv[])
 	arms.left.Rb   <<  cos(3.0*M_PI/4.0), -sin(3.0*M_PI/4.0), 0.0, sin(3.0*M_PI/4.0), cos(3.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
 	arms.right.xb  <<  0.0,  0.44, 0.0;
 	arms.right.Rb  <<  cos(1.0*M_PI/4.0), -sin(1.0*M_PI/4.0), 0.0, sin(1.0*M_PI/4.0), cos(1.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
-	arms.left.xd   <<  0.4308, -0.2616, 0.15;
+	arms.left.xd   <<  0.4008, -0.1616, 0.15;
 	arms.left.Rd   <<  cos(M_PI/4.0), sin(M_PI/4.0), 0.0, sin(M_PI/4.0), -cos(M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
-	arms.right.xd  <<  0.1692,  0.0000, 0.15;
+	arms.right.xd  <<  0.1392,  0.1000, 0.15;
 	arms.right.Rd  <<  cos(M_PI/4.0), sin(M_PI/4.0), 0.0, sin(M_PI/4.0), -cos(M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
 	double mode;
 	if (argc<2) {
@@ -76,13 +76,15 @@ int main(int argc, char *argv[])
 				arms.plan_paths(1);
 				arms.set_syn_pars();
 			} else {
-				if (arms.cost()<1e-4) {
+				if (arms.cost()<1e-3) {
 					if (arms.waypoint==1) {
 						cout << "Target pose reached!" << endl;
 						break;
 					}
-					if (arms.left.getFeature && arms.right.getFeature)
+					if (arms.left.getFeature && arms.right.getFeature) {
+						this_thread::sleep_for(std::chrono::seconds(5));
 						arms.set_waypoints();
+					}
 				}
 				arms.update_tar_pars();
 				arms.update_syn_pars();

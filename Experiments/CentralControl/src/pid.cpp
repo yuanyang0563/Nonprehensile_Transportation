@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
 	arms.left.Rb   <<  cos(3.0*M_PI/4.0), -sin(3.0*M_PI/4.0), 0.0, sin(3.0*M_PI/4.0), cos(3.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
 	arms.right.xb  <<  0.0,  0.44, 0.0;
 	arms.right.Rb  <<  cos(1.0*M_PI/4.0), -sin(1.0*M_PI/4.0), 0.0, sin(1.0*M_PI/4.0), cos(1.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
-	arms.left.xd   <<  0.4308, -0.2616, 0.15;
+	arms.left.xd   <<  0.4008, -0.1616, 0.15;
 	arms.left.Rd   <<  cos(M_PI/4.0), sin(M_PI/4.0), 0.0, sin(M_PI/4.0), -cos(M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
-	arms.right.xd  <<  0.1692,  0.0000, 0.15;
+	arms.right.xd  <<  0.1392,  0.1000, 0.15;
 	arms.right.Rd  <<  cos(M_PI/4.0), sin(M_PI/4.0), 0.0, sin(M_PI/4.0), -cos(M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
 	double mode;
 	if (argc<2) {
@@ -64,8 +64,10 @@ int main(int argc, char *argv[])
 						cout << "Target pose reached!" << endl;
 						break;
 					}
-					if (arms.left.getFeature && arms.right.getFeature)
+					if (arms.left.getFeature && arms.right.getFeature) {
+						this_thread::sleep_for(std::chrono::seconds(5));
 						arms.set_waypoints();
+					}
 				}
 				arms.left.upsilon   = 2.5*(arms.right.x-arms.left.x+arms.left.R*arms.left.R0.transpose()*(arms.left.x0-arms.right.x0));
 				arms.left.upsilon  += 2.5*(arms.right.x-arms.left.x+arms.right.R*arms.right.R0.transpose()*(arms.left.x0-arms.right.x0));
@@ -74,19 +76,21 @@ int main(int argc, char *argv[])
 				arms.right.upsilon += 2.5*(arms.left.x-arms.right.x+arms.right.R*arms.right.R0.transpose()*(arms.right.x0-arms.left.x0));
 				arms.right.omega    = 2.5*arms.right.R.transpose()*skewVec(arms.left.R*arms.left.R0.transpose()*arms.right.R0*arms.right.R.transpose());
 				if (mode==0.0 || mode==2.0) {
-					arms.update_vis_pars();
-					VectorXd vis_vl = 0.5*(arms.left.Lm.transpose()*arms.left.Lm).inverse()*arms.left.Lm.transpose()*(arms.left.zeta_d-arms.left.zeta);
-					VectorXd vis_vr = 0.5*(arms.right.Lm.transpose()*arms.right.Lm).inverse()*arms.right.Lm.transpose()*(arms.right.zeta_d-arms.right.zeta);
-					arms.left.upsilon += vis_vl.head(3);
-					arms.left.omega += vis_vl.tail(3);
-					arms.right.upsilon += vis_vr.head(3);
-					arms.right.omega += vis_vr.tail(3);
+					if (arms.left.getFeature && arms.right.getFeature) {
+						arms.update_vis_pars();
+						VectorXd vis_vl = 0.5*(arms.left.Lm.transpose()*arms.left.Lm).inverse()*arms.left.Lm.transpose()*(arms.left.zeta_d-arms.left.zeta);
+						VectorXd vis_vr = 0.5*(arms.right.Lm.transpose()*arms.right.Lm).inverse()*arms.right.Lm.transpose()*(arms.right.zeta_d-arms.right.zeta);
+						arms.left.upsilon += vis_vl.head(3);
+						arms.left.omega += vis_vl.tail(3);
+						arms.right.upsilon += vis_vr.head(3);
+						arms.right.omega += vis_vr.tail(3);
+					}
 				}
 				if (mode==1.0 || mode==2.0) {
-					arms.left.upsilon  += 0.1*(arms.left.xt-arms.left.x);
-					arms.left.omega  += 0.1*arms.left.R.transpose()*skewVec(arms.left.Rt*arms.left.R.transpose());
-					arms.right.upsilon  += 0.1*(arms.right.xt-arms.right.x);
-					arms.right.omega  += 0.1*arms.right.R.transpose()*skewVec(arms.right.Rt*arms.right.R.transpose());
+					arms.left.upsilon  += 0.5*(arms.left.xt-arms.left.x);
+					arms.left.omega  += 0.5*arms.left.R.transpose()*skewVec(arms.left.Rt*arms.left.R.transpose());
+					arms.right.upsilon  += 0.5*(arms.right.xt-arms.right.x);
+					arms.right.omega  += 0.5*arms.right.R.transpose()*skewVec(arms.right.Rt*arms.right.R.transpose());
 				}
 			}
 		}

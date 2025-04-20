@@ -35,7 +35,7 @@ double rho_u = 2.0;
 double beta_u = 50.0;
 double rho_o = 2.0;
 double beta_o = 50.0;
-double gamma_v = 5.0;
+double gamma_v = 0.025;
 
 void init () {
   I.diagonal() << I1, I2, I3;
