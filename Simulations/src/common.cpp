@@ -12,8 +12,7 @@ double I1 = 0.1;
 double I2 = 0.1;
 double I3 = 0.1;
 double mu = 0.1;
-
-DiagonalMatrix<double, 3> I;
+DiagonalMatrix<double,3> I;
 
 Vector3d r1( 0.075,-0.075,-0.075);
 Vector3d r2( 0.075, 0.075,-0.075);
@@ -28,12 +27,15 @@ double vt = 1.0;
 double vr = 1.0;
 double fc = 1e5;
 double epsilon = 0.01;
-double kappa_u = 3.0;
+double kappa_u = 1.0;
 double alpha_u = 300.0;
-double kappa_o = 0.1;
-double alpha_o = 30.0;
-double rho_u = 3.0;
-double rho_o = 1.0;
+double kappa_o = 1.0;
+double alpha_o = 300.0;
+double rho_u = 0.1;
+double beta_u = 5.0;
+double rho_o = 0.1;
+double beta_o = 5.0;
+double gamma_v = 5.0;
 
 void init () {
   I.diagonal() << I1, I2, I3;

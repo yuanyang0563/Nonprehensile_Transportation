@@ -22,56 +22,37 @@ int main(int argc, char *argv[])
 	arm.Rb << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
 	arm.xd << 0.4, 0.25, 0.20;
 	arm.Rd << 0.0, -1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0;
-	int mode;
+	double mode;
 	if (argc<2) {
 		cout << "Please set the control mode:" << endl;
 		cout << "0 for visual servoing, 1 for target reaching." << endl;
 		return 1;
 	} else {
-		mode = stoi(argv[1]);
-		if (mode==0 || mode==1)
+		mode = stod(argv[1]);
+		if (mode==0.0 || mode==1.0)
 			ros::param::set("/control_mode",mode);
 		else {
-			ROS_ERROR("Wrong mode.");
+			cout << "Wrong mode." << endl;
 			return 1;
 		}
 	}
-	if (mode==0)
-		arm.set_vis_pars();
+	arm.set_vis_pars();
 	while (ros::ok()) {
 		// record the starting time of each round
 		auto t_start = chrono::high_resolution_clock::now();
 		// get the current robot poses and Jacobians
 		arm.get_pose_jacobian();
 		// get the pose error and stops the simulation when the error is small enough
-		if (arm.cost()<1e-5)
+		if (arm.cost()<1e-5) {
+			cout << "Target pose reached!" << endl;
 			break;
+		}
 		// compute control and drive the arm
 		if (arm.getImage) {
-			if (mode==0) {
-				arm.update_vis_pars();
-				MatrixXd L(8,6);
-				for (int i=0; i<4; ++i) {
-					L.row(2*i+0) = arm.L[i].row(0);
-					L.row(2*i+1) = arm.L[i].row(1);
-				}
-				DiagonalMatrix<double,6> Tv;
-				Tv.diagonal() << 1.0, -1.0, 1.0, 1.0, -1.0, -1.0;
-				L = L*arm.Tv*Tv;
-				VectorXd Zeta(8), Zeta_d(8);
-				Zeta << arm.zeta[0], arm.zeta[1], arm.zeta[2], arm.zeta[3];
-				Zeta_d << arm.zeta_d[0], arm.zeta_d[1], arm.zeta_d[2], arm.zeta_d[3];
-				VectorXd vel = 0.25*(L.transpose()*L).inverse()*L.transpose()*(Zeta_d-Zeta);
-				arm.upsilon << vel.head(3);
-				arm.omega << vel.tail(3);
-			
-			} else {
-				arm.upsilon = arm.xd-arm.x;
-				arm.omega = skewVec(arm.Rd*arm.R.transpose());
-			}
-		} else {
-			arm.upsilon.setZero();
-			arm.omega.setZero();
+			arm.update_vis_pars();
+			VectorXd vel = 3.0*(arm.Lm.transpose()*arm.Lm).inverse()*arm.Lm.transpose()*(arm.zeta_d-arm.zeta);
+			arm.upsilon = mode*(arm.xd-arm.x)+(1.0-mode)*vel.head(3);
+			arm.omega = mode*arm.R.transpose()*skewVec(arm.Rd*arm.R.transpose())+(1.0-mode)*vel.tail(3);
 		}
 		arm.move_one_step();
 		// count the time spent in solving the control per round and the maximum time
@@ -82,7 +63,6 @@ int main(int argc, char *argv[])
     		if (t_duration.count()<dt)
     			this_thread::sleep_for(chrono::duration<double>(dt-t_duration.count()));
 	}
-	cout << "Target pose reached!" << endl;
 	cout << "Maximum solution time: " << t_max << " s." << endl;
 
 	return 0;
