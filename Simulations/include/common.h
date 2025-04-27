@@ -12,6 +12,10 @@
 #include <visp3/detection/vpDetectorAprilTag.h>
 #include <chrono>
 #include <thread>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <ctime>
 
 using namespace std;
 using namespace Eigen;
@@ -28,7 +32,7 @@ extern double I1;
 extern double I2;
 extern double I3;
 extern double mu;
-extern DiagonalMatrix<double, 3> I;
+extern DiagonalMatrix<double,3> I;
 
 extern Vector3d r1;
 extern Vector3d r2;
@@ -48,7 +52,9 @@ extern double alpha_u;
 extern double kappa_o;
 extern double alpha_o;
 extern double rho_u;
+extern double beta_u;
 extern double rho_o;
+extern double beta_o;
 extern double gamma_v;
 extern double uof_ub[];
 extern double uof_lb[];
