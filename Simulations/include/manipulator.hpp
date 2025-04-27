@@ -13,24 +13,23 @@ class manipulator {
 	vpImage<unsigned char> image;
 	vpCameraParameters cam;
 	vector<vector<vpImagePoint>> tagsCorners;
+	ros::Timer timer;
+	vector<double*> data;
+	stringstream file_name;
+	bool file_init;
 
   public:
   	VectorXd a, alpha, d;
 	VectorXd q, dq;
-	VectorXd bu_d, bo_d, eta, lambda, h;
-	MatrixXd J, Au_d, Ao_d, Hu, Ho, Hf, Tv;
+	VectorXd b_d, b_v, eta, lambda, h;
+	MatrixXd A_d, A_v, J, Hu, Ho, Hf, Tu, To, L, Lu, Lo, Lm;
 	Vector3d upsilon, omega;
-	Vector3d x, xb, xeo, xec, xd;
-	Matrix3d R, Rb, Reo, Rec, Rd;
+	Vector3d x, xb, xeo, xec, xd, x0;
+	Matrix3d R, Rb, Reo, Rec, Rd, R0;
 	bool getImage;
 	vpDisplay *display;
 	vpDetectorAprilTag detector;
-	vector<Vector3d> p;
-	vector<Vector2d> zeta, zeta_d;
-	vector<Matrix<double,2,6>> L;
-	
-	MatrixXd A_v;
-	VectorXd b_v;
+	VectorXd zeta, zeta_d;
 	
 	manipulator(string arm) {
 		a = VectorXd(6);
@@ -38,19 +37,19 @@ class manipulator {
 		d = VectorXd(6);
 		q = VectorXd(6);
 		dq = VectorXd(6);
-		upsilon.setZero();
-		omega.setZero();
+		upsilon = Vector3d::Zero();
+		omega = Vector3d::Zero();
 		J = MatrixXd(6,6);
-		Hu = MatrixXd(6*N,3*N);
-		Ho = MatrixXd(6*N,3*N);
-		Hf = MatrixXd(6*N,12*N);
+		Hu = MatrixXd::Zero(6*N,3*N);
+		Ho = MatrixXd::Zero(6*N,3*N);
+		Hf = MatrixXd::Zero(6*N,12*N);
 		eta = VectorXd::Zero(3*N);
 		lambda = VectorXd::Zero(3*N);
 		h = VectorXd::Zero(6*N);
-		Au_d = MatrixXd(3*N,3*N);
-		bu_d = VectorXd(3*N);
-		Ao_d = MatrixXd(3*N,3*N);
-		bo_d = VectorXd(3*N);
+		A_d = MatrixXd::Zero(6*N,6*N);
+		b_d = VectorXd::Zero(6*N);
+		A_v = MatrixXd::Zero(6*N,6*N);
+		b_v = VectorXd::Zero(6*N);
 		pub = nh.advertise<sensor_msgs::JointState>(arm+"/joint_position",1);
 		msg.position.resize(6);
 		sub = nh.subscribe(arm+"/image",1,&manipulator::image_callback,this);
@@ -59,19 +58,30 @@ class manipulator {
 		display = new vpDisplayX(image);
 		vpDisplay::setTitle(image, arm+"_image");
 		cam.initPersProjWithoutDistortion(480,480,240,240);
-		p.resize(4);
-		zeta.resize(4);
-		zeta_d.resize(4);
-		L.resize(4);
-		Tv = MatrixXd(6,6);
-		A_v = MatrixXd(6*N,6*N);
-		b_v = VectorXd(6*N);
+		Tu = MatrixXd::Zero(6,3);
+		To = MatrixXd::Zero(6,3);
+		L = MatrixXd::Zero(8,6);
+		Lu = MatrixXd::Zero(8,3);
+		Lo = MatrixXd::Zero(8,3);
+		Lm = MatrixXd::Zero(8,6);
+		zeta = VectorXd(8);
+		zeta_d = VectorXd(8);
+		timer = nh.createTimer(ros::Duration(0.01),&manipulator::store_data, this);
+		data.resize(20);
+		for (int i=0; i<6; ++i)
+			data[i] = &q(i);
+		for (int i=6; i<12; ++i)
+			data[i] = &dq(i-6);
+		for (int i=12; i<20; ++i)
+			data[i] = &zeta(i-12);
+		file_name << "../data/" << arm << "_" << time(0) << ".txt";
+		file_init = false;
 	}
 	
 	~manipulator() {
 		delete display;
 	}
-
+	
 	void get_pose_jacobian () {
 		Matrix4d A;
 		MatrixXd T = Matrix4d::Identity();
@@ -97,18 +107,18 @@ class manipulator {
         	try {
             		for (int i=0; i<msg->height; ++i) {
                 		for (int j=0; j<msg->width; ++j)
-                			image[i][j] = msg->data[i*msg->step+3*j];
+                			image[msg->height-i-1][j] = msg->data[i*msg->step+3*j];
             		}
             		detector.detect(image);
             		tagsCorners = detector.getTagsCorners();
             		if (tagsCorners[0].size()==4) {
 				for (int i=0; i<4; ++i) {
-            				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],zeta[i](0),zeta[i](1));
-            				L[i].row(0) << -1.0,  0.0, zeta[i](0), zeta[i](0)*zeta[i](1), -1.0-zeta[i](0)*zeta[i](0),  zeta[i](1);
-            				L[i].row(1) <<  0.0, -1.0, zeta[i](1), 1.0+zeta[i](1)*zeta[i](1), -zeta[i](0)*zeta[i](1), -zeta[i](0);
-            				if (!getImage)
-            					zeta_d[i] = zeta[i];
+            				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],zeta(2*i+0),zeta(2*i+1));
+            				L.row(2*i+0) << -10.0,   0.0, 10.0*zeta(2*i+0), zeta(2*i+0)*zeta(2*i+1), -1.0-zeta(2*i+0)*zeta(2*i+0),  zeta(2*i+1);
+            				L.row(2*i+1) <<   0.0, -10.0, 10.0*zeta(2*i+1), 1.0+zeta(2*i+1)*zeta(2*i+1), -zeta(2*i+0)*zeta(2*i+1), -zeta(2*i+0);
             			}
+            			if (!getImage)
+            				zeta_d = zeta;
             			getImage = true;
             		} else {
             			getImage = false;
@@ -131,15 +141,14 @@ class manipulator {
 	}
 	
 	void set_tar_pars () {
-		Au_d = alpha_u*MatrixXd::Identity(3*N,3*N)+kappa_u*kroneckerProduct(Snn,Matrix3d::Identity());
-		Ao_d = alpha_o*MatrixXd::Identity(3*N,3*N);
-		Hu.setZero();
+		A_d.block(0*N,0*N,3*N,3*N) = kappa_u*kroneckerProduct(Snn,Matrix3d::Identity())+alpha_u*MatrixXd::Identity(3*N,3*N);
+		A_d.block(3*N,3*N,3*N,3*N) = alpha_o*MatrixXd::Identity(3*N,3*N);
 		Hu.block(0,0,3*N,3*N) = m*kroneckerProduct(Gamma,Matrix3d::Identity());
 	}
 	
 	void update_tar_pars () {
-		bu_d = kappa_u*Sn*(x-xd);
-		bo_d = kappa_o*Sn*skewVec(Rd.transpose()*R);
+		b_d.head(3*N) = kappa_u*Sn*(x-xd);
+		b_d.tail(3*N) = kappa_o*Sn*skewVec(Rd.transpose()*R);
 		eta.head(3) = upsilon-R*xeo.cross(omega);
 		lambda.head(3) = I*Reo.transpose()*omega;
 		h.head(3*N) = m*eta-dt*m*kroneckerProduct(MatrixXd::Ones(N,1),R*skewMat(omega)*skewMat(omega)*xeo+g);
@@ -149,20 +158,45 @@ class manipulator {
 	}
 	
 	void set_vis_pars () {
-		Tv.block(0,3,3,3) = -Rec.transpose()*skewMat(xec);
-		Tv.block(3,0,3,3) = Matrix3d::Zero();
-		Tv.block(3,3,3,3) = Rec.transpose();
+		To << -Rec.transpose()*skewMat(xec), Rec.transpose();
 	}
 	
 	void update_vis_pars () {
 		A_v.setZero();
 		b_v.setZero();
-		Tv.block(0,0,3,3) = (R*Rec).transpose();
+		Tu.block(0,0,3,3) = (R*Rec).transpose();
+		Lu = L*Tu;
+		Lo = L*To;
+		Lm << Lu, Lo;
+		A_v.block(0*N,0*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lu.transpose()*Lu);
+		A_v.block(0*N,3*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lu.transpose()*Lo);
+		A_v.block(3*N,0*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lo.transpose()*Lu);
+		A_v.block(3*N,3*N,3*N,3*N) = 5.0*kroneckerProduct(Snn,Lo.transpose()*Lo);
+		b_v.head(3*N) = Sn*Lu.transpose()*(zeta-zeta_d);
+		b_v.tail(3*N) = Sn*Lo.transpose()*(zeta-zeta_d);
 	}
 	
 	inline double cost () {
 		return (xd-x).norm()-(Rd*R.transpose()).trace()+3.0;
 	}
+	
+	void store_data (const ros::TimerEvent& event) {
+		if (getImage) {
+			ofstream data_stream;
+			if (!file_init) {
+				data_stream.open(file_name.str());
+				file_init = !file_init;
+			} else
+				data_stream.open(file_name.str(),ios_base::app);
+			data_stream << setiosflags(ios::fixed) << setprecision(2) << ros::Time::now().toSec();
+			vector<double*>::iterator it;
+			for (it=data.begin(); it!=data.end(); ++it)
+				data_stream << ", " << setprecision(3) << **it;
+			data_stream << endl;
+			data_stream.close();
+		}
+	}
 
 };
+
 
