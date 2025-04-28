@@ -1,0 +1,184 @@
+#include "manipulator.hpp"
+
+using namespace std;
+using namespace Eigen;
+
+class manipulator_dual {
+
+  public:
+  
+	manipulator left;
+	manipulator right;
+	
+	MatrixXd A_obj, A_ls, A_rs, A_cs;
+	VectorXd b_obj, b_ls, b_rs;
+	
+	Vector3d x_lr, x0_lr, x_rl, x0_rl;
+	Matrix3d R_lr, R0_lr, R_rl, R0_rl;
+	
+	double mode;
+	
+	double uof_ub[24*N], uof_lb[24*N];
+	
+	manipulator_dual (string arm_left, string arm_right, double control_mode) : left(arm_left), right(arm_right), mode(control_mode) {
+		A_obj = MatrixXd::Zero(24*N,24*N);
+		b_obj = VectorXd::Zero(24*N);
+		A_ls = MatrixXd::Zero(6*N,6*N);
+		b_ls = VectorXd::Zero(6*N);
+		A_rs = MatrixXd::Zero(6*N,6*N);
+		b_rs = VectorXd::Zero(6*N);
+		A_cs = MatrixXd::Zero(6*N,6*N);
+		left.display->setWindowPosition(0,0);
+		right.display->setWindowPosition(0,640);
+	}
+
+	void get_pose_jacobian () {
+		bool getJoints = left.getJoints && right.getJoints;
+		if (!getJoints) {
+			left.get_pose_jacobian();
+			right.get_pose_jacobian();
+			set_syn_pars();
+		} else {
+			left.get_pose_jacobian();
+			right.get_pose_jacobian();
+			update_syn_pars();
+		}
+	}
+	
+	void move_one_step () {
+		left.move_one_step();
+		right.move_one_step();
+	}
+	
+	void set_tar_pars () {
+		left.set_tar_pars();
+		right.set_tar_pars();
+	}
+	
+	void update_tar_pars () {
+		left.update_tar_pars();
+		right.update_tar_pars();
+	}
+
+	void set_syn_pars () {
+		R0_lr = left.R0.transpose()*right.R0;
+		R0_rl = right.R0.transpose()*left.R0;
+		x0_lr = left.R0.transpose()*(right.x0-left.x0);
+		x0_rl = right.R0.transpose()*(left.x0-right.x0);
+		A_ls.block(0*N,0*N,3*N,3*N)  =  rho_u*kroneckerProduct(Snn,4.0*Matrix3d::Identity());
+		A_ls.block(0*N,0*N,3*N,3*N) +=  beta_u*MatrixXd::Identity(3*N,3*N);
+		A_ls.block(3*N,3*N,3*N,3*N)  = -rho_u*kroneckerProduct(Snn,skewMat(x0_lr)*skewMat(x0_lr));
+		A_ls.block(3*N,3*N,3*N,3*N) +=  beta_o*MatrixXd::Identity(3*N,3*N);
+		A_rs.block(0*N,0*N,3*N,3*N)  =  rho_u*kroneckerProduct(Snn,4.0*Matrix3d::Identity());
+		A_rs.block(0*N,0*N,3*N,3*N) +=  beta_u*MatrixXd::Identity(3*N,3*N);
+		A_rs.block(3*N,3*N,3*N,3*N)  = -rho_u*kroneckerProduct(Snn,skewMat(x0_rl)*skewMat(x0_rl));
+		A_rs.block(3*N,3*N,3*N,3*N) +=  beta_o*MatrixXd::Identity(3*N,3*N);
+		A_cs.block(0*N,0*N,3*N,3*N)  = -rho_u*kroneckerProduct(Snn,4.0*Matrix3d::Identity());
+	}
+
+	void update_syn_pars () {
+		R_lr = left.R.transpose()*right.R;
+		R_rl = right.R.transpose()*left.R;
+		x_lr = left.R.transpose()*(right.x-left.x);
+		x_rl = right.R.transpose()*(left.x-right.x);
+		A_ls.block(0*N,3*N,3*N,3*N)  = -rho_u*kroneckerProduct(Snn,2.0*left.R*skewMat(x0_lr));
+		A_ls.block(3*N,0*N,3*N,3*N)  =  A_ls.block(0*N,3*N,3*N,3*N).transpose();
+		A_rs.block(0*N,3*N,3*N,3*N)  = -rho_u*kroneckerProduct(Snn,2.0*right.R*skewMat(x0_rl));
+		A_rs.block(3*N,0*N,3*N,3*N)  =  A_rs.block(0*N,3*N,3*N,3*N).transpose();
+		A_cs.block(0*N,3*N,3*N,3*N)  = -A_rs.block(0*N,3*N,3*N,3*N);
+		A_cs.block(3*N,0*N,3*N,3*N)  = -A_ls.block(3*N,0*N,3*N,3*N);
+		A_cs.block(3*N,3*N,3*N,3*N)  =  rho_u*kroneckerProduct(Snn,skewMat(x0_lr)*R_lr*skewMat(x0_rl));
+		A_cs.block(3*N,3*N,3*N,3*N) +=  2.0*rho_o*kroneckerProduct(Snn,R_lr*R0_lr.transpose()*R_lr-R_lr*(R0_lr.transpose()*R_lr).trace());
+		b_ls.head(3*N) =  rho_u*Sn*(4.0*(left.x-right.x)+2.0*(left.R*x0_lr-right.R*x0_rl));
+		b_ls.tail(3*N) = -rho_u*Sn*(2.0*skewMat(x0_lr)*x_lr+skewMat(x0_lr)*R_lr*x0_rl)+2.0*rho_o*Sn*skewVec(R0_lr*R_lr.transpose());
+		b_rs.head(3*N) =  rho_u*Sn*(4.0*(right.x-left.x)+2.0*(right.R*x0_rl-left.R*x0_lr));
+		b_rs.tail(3*N) = -rho_u*Sn*(2.0*skewMat(x0_rl)*x_rl+skewMat(x0_rl)*R_rl*x0_lr)+2.0*rho_o*Sn*skewVec(R0_rl*R_rl.transpose());
+	}
+	
+	void set_vis_pars () {
+		left.set_vis_pars();
+		right.set_vis_pars();
+	}
+	
+	void update_vis_pars () {
+		left.update_vis_pars();
+		right.update_vis_pars();
+	}
+	
+	void set_cst_pars () {
+		left.set_cst_pars();
+		right.set_cst_pars();
+	}
+	
+	void update_cst_pars () {
+		left.update_cst_pars();
+		right.update_cst_pars();
+	}
+	
+	void set_opt_pars () {
+		for (int i=0; i<24*N; ++i) {
+			if (i<6*N)
+				uof_ub[i] = vt;
+			else if (i<12*N)
+				uof_ub[i] = vr;
+			else
+				uof_ub[i] = fc;
+			uof_lb[i] =-uof_ub[i];
+		}
+		for (int n=0; n<N; ++n) {
+			for (int i=0; i<4; ++i)
+				uof_lb[12*N+12*n+3*i+2] = epsilon;
+		}
+		if (mode==0.0) {
+			gamma_v = 5.0;
+			kappa_f = 0.0;
+		}
+		set_tar_pars();
+		set_vis_pars();
+		set_cst_pars();
+		A_obj.block(12*N,12*N,12*N,12*N) = kappa_f*MatrixXd::Identity(12*N,12*N);
+	}
+	
+	void update_opt_pars () {
+		MatrixXd A_l = A_ls;
+		MatrixXd A_r = A_rs;
+		VectorXd b_l = b_ls;
+		VectorXd b_r = b_rs;
+		update_tar_pars();
+		if (mode!=0.0) {
+			A_l += left.A_d;
+			A_r += right.A_d;
+			b_l += left.b_d;
+			b_r += right.b_d;
+		}
+		update_vis_pars();
+		if (mode!=1.0) {
+			A_l += left.A_v;
+			A_r += right.A_v;
+			b_l += left.b_v;
+			b_r += right.b_v;
+		}
+		A_obj.block(0*N,0*N,6*N,6*N) =  A_l;
+		A_obj.block(0*N,6*N,6*N,6*N) = -A_cs;
+		A_obj.block(6*N,0*N,6*N,6*N) = -A_cs.transpose();
+		A_obj.block(6*N,6*N,6*N,6*N) =  A_r;
+		b_obj.segment(0*N,6*N) = b_l;
+		b_obj.segment(6*N,6*N) = b_r;
+		update_cst_pars();
+	}
+	
+	void store_data (double t_duration) {
+		left.store_data(t_duration);
+		right.store_data(t_duration);
+	}
+	
+	inline double cost () {
+		return left.cost()+right.cost();
+	}
+
+};
+
+
+
+
+
