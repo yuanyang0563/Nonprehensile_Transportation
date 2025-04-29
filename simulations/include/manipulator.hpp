@@ -66,13 +66,13 @@ class manipulator {
 		zeta = VectorXd(8);
 		zeta_d = VectorXd(8);
 		data.resize(32);
-		for (int i=0; i<6; ++i)
+		for (size_t i=0; i<6; ++i)
 			data[i] = &q(i);
-		for (int i=6; i<12; ++i)
+		for (size_t i=6; i<12; ++i)
 			data[i] = &dq(i-6);
-		for (int i=12; i<20; ++i)
+		for (size_t i=12; i<20; ++i)
 			data[i] = &zeta(i-12);
-		for (int i=20; i<32; ++i)
+		for (size_t i=20; i<32; ++i)
 			data[i] = &f(i-20);
 		file_name << "../data/" << ros::this_node::getName() << "_" << name << "_" << time(0) << ".txt";
 		file_init = false;
@@ -88,7 +88,7 @@ class manipulator {
 		Matrix<double, 3, 7> o, z;
 		o.col(0) << 0.0, 0.0, 0.0;
 		z.col(0) << 0.0, 0.0, 1.0;
-		for (int i=0; i<6; ++i) {
+		for (size_t i=0; i<6; ++i) {
 			A << cos(q(i)), -sin(q(i))*cos(alpha(i)),  sin(q(i))*sin(alpha(i)), a(i)*cos(q(i)),
 	     	     	     sin(q(i)),  cos(q(i))*cos(alpha(i)), -cos(q(i))*sin(alpha(i)), a(i)*sin(q(i)),
 	     	             0.0,        sin(alpha(i)),            cos(alpha(i)),           d(i),
@@ -104,7 +104,7 @@ class manipulator {
 			R0 = R;
 			getJoints = !getJoints;
 		}
-		for (int i=0; i<6; ++i)
+		for (size_t i=0; i<6; ++i)
 			J.col(i)<< Rb*z.col(i).cross(o.col(6)-o.col(i)), R.transpose()*Rb*z.col(i);
 	}
 	
@@ -117,7 +117,7 @@ class manipulator {
             		detector.detect(image);
             		tagsCorners = detector.getTagsCorners();
             		if (tagsCorners[0].size()==4) {
-				for (int i=0; i<4; ++i) {
+				for (size_t i=0; i<4; ++i) {
             				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],zeta(2*i+0),zeta(2*i+1));
             				L.row(2*i+0) << -10.0,   0.0, 10.0*zeta(2*i+0), zeta(2*i+0)*zeta(2*i+1), -1.0-zeta(2*i+0)*zeta(2*i+0),  zeta(2*i+1);
             				L.row(2*i+1) <<   0.0, -10.0, 10.0*zeta(2*i+1), 1.0+zeta(2*i+1)*zeta(2*i+1), -zeta(2*i+0)*zeta(2*i+1), -zeta(2*i+0);
@@ -139,7 +139,7 @@ class manipulator {
 		dq << upsilon, omega;
 		dq = J.transpose()*(J*J.transpose()).inverse()*dq;
 		q += dt*dq;
-		for (int i=0; i<6; i++)
+		for (size_t i=0; i<6; i++)
 			joint_msg.position[i] = q(i);
 		pub_joint.publish(joint_msg);
 		ros::spinOnce();

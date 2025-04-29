@@ -69,18 +69,18 @@ void init () {
   I.diagonal() << I1, I2, I3;
   r << r1.transpose(), r2.transpose(), r3.transpose(), r4.transpose();
   Gamma = MatrixXd::Identity(N,N);
-  for (int n=1; n<N; ++n)
+  for (size_t n=1; n<N; ++n)
 	Gamma(n,n-1) = -1.0;
   Sn.setZero();
   Snn.setZero();
-  for (int n=0; n<N; ++n) {
+  for (size_t n=0; n<N; ++n) {
 	MatrixXd sn = MatrixXd::Zero(N,1);
-	for (int i=0; i<=n; ++i)
+	for (size_t i=0; i<=n; ++i)
 		sn(i) = 1.0;
 	Sn += kroneckerProduct(sn,Matrix3d::Identity());
 	Snn += sn*sn.transpose();
   }
-  for (int i=0; i<4; ++i) {
+  for (size_t i=0; i<4; ++i) {
 	Gu.block(0,3*i,3,3) = Matrix3d::Identity();
 	Go.block(0,3*i,3,3) = skewMat(r.row(i));
   }
@@ -101,8 +101,8 @@ Vector3d skewVec (const Matrix3d& M) {
 
 MatrixXd kroneckerProduct (const MatrixXd& A, const MatrixXd& B) {
     MatrixXd result(A.rows()*B.rows(), A.cols()*B.cols());
-    for (int i = 0; i < A.rows(); ++i) {
-        for (int j=0; j<A.cols(); ++j)
+    for (size_t i = 0; i < A.rows(); ++i) {
+        for (size_t j=0; j<A.cols(); ++j)
             result.block(i * B.rows(), j * B.cols(), B.rows(), B.cols()) = A(i, j) * B;
     }
     return result;

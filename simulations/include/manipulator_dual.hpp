@@ -113,7 +113,7 @@ class manipulator_dual {
 	}
 	
 	void set_opt_pars () {
-		for (int i=0; i<24*N; ++i) {
+		for (size_t i=0; i<24*N; ++i) {
 			if (i<6*N)
 				uof_ub[i] = vt;
 			else if (i<12*N)
@@ -122,8 +122,8 @@ class manipulator_dual {
 				uof_ub[i] = fc;
 			uof_lb[i] =-uof_ub[i];
 		}
-		for (int n=0; n<N; ++n) {
-			for (int i=0; i<4; ++i)
+		for (size_t n=0; n<N; ++n) {
+			for (size_t i=0; i<4; ++i)
 				uof_lb[12*N+12*n+3*i+2] = epsilon;
 		}
 		if (mode==0.0) {

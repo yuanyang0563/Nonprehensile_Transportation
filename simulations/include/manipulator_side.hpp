@@ -57,7 +57,7 @@ class manipulator_side : public manipulator {
 		pofo_msg.data[4] = quaternion.x();
 		pofo_msg.data[5] = quaternion.y();
 		pofo_msg.data[6] = quaternion.z();
-		for (int i=0; i<12; ++i)
+		for (size_t i=0; i<12; ++i)
 			pofo_msg.data[7+i] = f(i);
 		pub_peer.publish(pofo_msg);
 		manipulator::move_one_step();
@@ -67,7 +67,7 @@ class manipulator_side : public manipulator {
 		peer.x << msg->data[0], msg->data[1], msg->data[2];
 		Quaterniond quaternion (msg->data[3], msg->data[4], msg->data[5], msg->data[6]);
 		peer.R << quaternion.toRotationMatrix();
-		for (int i=0; i<12; ++i)
+		for (size_t i=0; i<12; ++i)
 			peer.f(i) = msg->data[7+i];
 		if (!getPeer) {
 			peer.x0 = peer.x;
@@ -99,7 +99,7 @@ class manipulator_side : public manipulator {
 	}
 	
 	void set_opt_pars () {
-		for (int i=0; i<18*N; ++i) {
+		for (size_t i=0; i<18*N; ++i) {
 			if (i<3*N)
 				uof_ub[i] = vt;
 			else if (i<6*N)
@@ -108,8 +108,8 @@ class manipulator_side : public manipulator {
 				uof_ub[i] = fc;
 			uof_lb[i] =-uof_ub[i];
 		}
-		for (int n=0; n<N; ++n) {
-			for (int i=0; i<4; ++i)
+		for (size_t n=0; n<N; ++n) {
+			for (size_t i=0; i<4; ++i)
 				uof_lb[6*N+12*n+3*i+2] = epsilon;
 		}
 		if (mode==0.0) {
