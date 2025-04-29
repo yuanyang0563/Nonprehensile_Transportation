@@ -1,8 +1,5 @@
 #include "manipulator.hpp"
 
-using namespace std;
-using namespace Eigen;
-
 class manipulator_dual {
 
   public:

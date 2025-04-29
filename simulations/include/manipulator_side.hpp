@@ -1,8 +1,5 @@
 #include "manipulator.hpp"
 
-using namespace std;
-using namespace Eigen;
-
 struct Arm {
 	Vector3d x, x0;
 	Matrix3d R, R0;

@@ -1,8 +1,5 @@
 #include "common.h"
 
-using namespace std;
-using namespace Eigen;
-
 class manipulator {
 
   protected:
@@ -77,7 +74,7 @@ class manipulator {
 			data[i] = &zeta(i-12);
 		for (int i=20; i<32; ++i)
 			data[i] = &f(i-20);
-		file_name << "../data/" << name << "_" << time(0) << ".txt";
+		file_name << "../data/" << ros::this_node::getName() << "_" << name << "_" << time(0) << ".txt";
 		file_init = false;
 	}
 	
