@@ -79,33 +79,33 @@ int main(int argc, char *argv[])
 				GRBVar *uof = model.addVars(arms.uof_lb,arms.uof_ub,NULL,NULL,NULL,24*N);
 				// set the objective function
 				GRBQuadExpr obj = 0.0;
-				for (int i=0; i<24*N; ++i) {
-					for (int j=0; j<24*N; ++j)
+				for (size_t i=0; i<24*N; ++i) {
+					for (size_t j=0; j<24*N; ++j)
 						obj += dt*uof[i]*arms.A_obj(i,j)*uof[j];
 					obj += 2.0*arms.b_obj(i)*uof[i];
 				}
 				model.setObjective(obj);
 				// add motion constraints on the transported object
-				for (int i=0; i<6*N; ++i) {
+				for (size_t i=0; i<6*N; ++i) {
 					GRBLinExpr cst = 0.0;
-					for (int j=0; j<3*N; ++j)
+					for (size_t j=0; j<3*N; ++j)
 						cst += arms.left.Hu(i,j-0*N)*uof[j];
-					for (int j=3*N; j<6*N; ++j)
+					for (size_t j=3*N; j<6*N; ++j)
 						cst -= arms.left.Ho(i,j-3*N)*uof[j];
-					for (int j=6*N; j<9*N; ++j)
+					for (size_t j=6*N; j<9*N; ++j)
 						cst += arms.right.Hu(i,j-6*N)*uof[j];
-					for (int j=9*N; j<12*N; ++j)
+					for (size_t j=9*N; j<12*N; ++j)
 						cst -= arms.right.Ho(i,j-9*N)*uof[j];
-					for (int j=12*N; j<24*N; ++j) {
+					for (size_t j=12*N; j<24*N; ++j) {
 						cst -= dt*arms.left.Hf(i,j-12*N)*uof[j];
 						cst -= dt*arms.right.Hf(i,j-12*N)*uof[j];
 					}
 					model.addConstr(cst==arms.left.h(i)+arms.right.h(i));
 				}
 				// add constraints on the contact forces between the object and the tray
-				for (int n=0; n<N; ++n) {
-					for (int i=0; i<4; ++i) {
-						int ind = 12*N+12*n+3*i;
+				for (size_t n=0; n<N; ++n) {
+					for (size_t i=0; i<4; ++i) {
+						size_t ind = 12*N+12*n+3*i;
 						GRBQuadExpr cstc = uof[ind+0]*uof[ind+0]+uof[ind+1]*uof[ind+1]-mu*mu*uof[ind+2]*uof[ind+2];
 						model.addQConstr(cstc<=0.0);
 					}
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 				arms.left.omega << uof[3*N].get(GRB_DoubleAttr_X), uof[3*N+1].get(GRB_DoubleAttr_X), uof[3*N+2].get(GRB_DoubleAttr_X);
 				arms.right.upsilon << uof[6*N].get(GRB_DoubleAttr_X), uof[6*N+1].get(GRB_DoubleAttr_X), uof[6*N+2].get(GRB_DoubleAttr_X);
 				arms.right.omega << uof[9*N].get(GRB_DoubleAttr_X), uof[9*N+1].get(GRB_DoubleAttr_X), uof[9*N+2].get(GRB_DoubleAttr_X);
-				for (int i=0; i<12; ++i) {
+				for (size_t i=0; i<12; ++i) {
 					arms.left.f(i) = uof[12*N+i].get(GRB_DoubleAttr_X);
 					arms.right.f(i) = uof[12*N+i].get(GRB_DoubleAttr_X);
 				}

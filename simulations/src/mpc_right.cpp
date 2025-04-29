@@ -67,39 +67,39 @@ int main(int argc, char *argv[])
 				GRBVar *uof = model.addVars(arm.uof_lb,arm.uof_ub,NULL,NULL,NULL,18*N);
 				// set the objective function
 				GRBQuadExpr obj = 0.0;
-				for (int i=0; i<18*N; ++i) {
-					for (int j=0; j<18*N; ++j)
+				for (size_t i=0; i<18*N; ++i) {
+					for (size_t j=0; j<18*N; ++j)
 						obj += dt*uof[i]*arm.A_obj(i,j)*uof[j];
 					obj += 2.0*arm.b_obj(i)*uof[i];
 				}
 				model.setObjective(obj);
 				// add motion constraints on the transported object
-				for (int i=0; i<6*N; ++i) {
+				for (size_t i=0; i<6*N; ++i) {
 					GRBLinExpr cst = 0.0;
-					for (int j=0; j<3*N; ++j)
+					for (size_t j=0; j<3*N; ++j)
 						cst += arm.Hu(i,j-0*N)*uof[j];
-					for (int j=3*N; j<6*N; ++j)
+					for (size_t j=3*N; j<6*N; ++j)
 						cst -= arm.Ho(i,j-3*N)*uof[j];
-					for (int j=6*N; j<18*N; ++j) {
+					for (size_t j=6*N; j<18*N; ++j) {
 						cst -= dt*arm.Hf(i,j-6*N)*uof[j];
 					}
 					model.addConstr(cst==arm.h(i));
 				}
 				// add constraints on the contact forces between the object and the tray
-				for (int n=0; n<N; ++n) {
-					for (int i=0; i<4; ++i) {
-						int ind = 6*N+12*n+3*i;
+				for (size_t n=0; n<N; ++n) {
+					for (size_t i=0; i<4; ++i) {
+						size_t ind = 6*N+12*n+3*i;
 						GRBQuadExpr cstc = uof[ind+0]*uof[ind+0]+uof[ind+1]*uof[ind+1]-mu*mu*uof[ind+2]*uof[ind+2];
 						model.addQConstr(cstc<=0.0);
 					}
 				}
 				// solve and set the Cartesian velocity control inputs
 				model.optimize();
-				for (int i=0; i<3; ++i) {
+				for (size_t i=0; i<3; ++i) {
 					arm.upsilon(i) = uof[i].get(GRB_DoubleAttr_X);
 					arm.omega(i) = uof[3*N+i].get(GRB_DoubleAttr_X);
 				}
-				for (int i=0; i<12; ++i)
+				for (size_t i=0; i<12; ++i)
 					arm.f(i) = uof[6*N+i].get(GRB_DoubleAttr_X);
 			} catch(GRBException e) {
 				cout << "No solution. Retry." << endl;
