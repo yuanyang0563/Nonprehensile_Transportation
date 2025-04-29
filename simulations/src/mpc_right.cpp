@@ -1,9 +1,6 @@
 #include <gurobi_c++.h>
 #include "manipulator_side.hpp"
 
-using namespace std;
-using namespace Eigen;
-
 int main(int argc, char *argv[])
 {
 	init();
