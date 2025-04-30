@@ -1,11 +1,11 @@
 #include "manipulator.hpp"
 
 struct Arm {
-	Vector3d x, x0;
-	Matrix3d R, R0;
-	VectorXd f;
+	Vector3f x, x0;
+	Matrix3f R, R0;
+	VectorXf f;
 	Arm () {
-		f = VectorXd(12);
+		f = VectorXf(12);
 	}
 };
 
@@ -19,21 +19,21 @@ class manipulator_side : public manipulator {
   	Arm self, peer;
   	bool getPeer;
   	
-  	MatrixXd A_s, A_obj;
-  	VectorXd b_s, b_obj;
+  	MatrixXf A_s, A_obj;
+  	VectorXf b_s, b_obj;
   	
-  	Vector3d x_sp, x0_sp, x0_ps;
-  	Matrix3d R_sp, R0_sp;
+  	Vector3f x_sp, x0_sp, x0_ps;
+  	Matrix3f R_sp, R0_sp;
   	
-  	double mode;
+  	float mode;
   	
   	double uof_ub[18*N], uof_lb[18*N];
 
-	manipulator_side (string name_self, string name_peer, double control_mode) : manipulator (name_self), mode(control_mode) {
-		A_s = MatrixXd::Zero(6*N,6*N);
-		b_s = VectorXd::Zero(6*N);
-		A_obj = MatrixXd::Zero(18*N,18*N);
-		b_obj = VectorXd::Zero(18*N);
+	manipulator_side (string name_self, string name_peer, float control_mode) : manipulator (name_self), mode(control_mode) {
+		A_s = MatrixXf::Zero(6*N,6*N);
+		b_s = VectorXf::Zero(6*N);
+		A_obj = MatrixXf::Zero(18*N,18*N);
+		b_obj = VectorXf::Zero(18*N);
 		pub_peer = nh.advertise<std_msgs::Float64MultiArray>(name_self+"/pofo",1);
 		sub_peer = nh.subscribe(name_peer+"/pofo",1,&manipulator_side::peer_callback,this);
 		pofo_msg.data.resize(19);
@@ -52,7 +52,7 @@ class manipulator_side : public manipulator {
 		pofo_msg.data[0] = x(0);
 		pofo_msg.data[1] = x(1);
 		pofo_msg.data[2] = x(2);
-		Quaterniond quaternion(R);
+		Quaternionf quaternion(R);
 		pofo_msg.data[3] = quaternion.w();
 		pofo_msg.data[4] = quaternion.x();
 		pofo_msg.data[5] = quaternion.y();
@@ -65,7 +65,7 @@ class manipulator_side : public manipulator {
 	
 	void peer_callback (const std_msgs::Float64MultiArray::ConstPtr& msg) {
 		peer.x << msg->data[0], msg->data[1], msg->data[2];
-		Quaterniond quaternion (msg->data[3], msg->data[4], msg->data[5], msg->data[6]);
+		Quaternionf quaternion (msg->data[3], msg->data[4], msg->data[5], msg->data[6]);
 		peer.R << quaternion.toRotationMatrix();
 		for (size_t i=0; i<12; ++i)
 			peer.f(i) = msg->data[7+i];
@@ -83,10 +83,10 @@ class manipulator_side : public manipulator {
 		R0_sp = self.R0.transpose()*peer.R0;
 		x0_sp = self.R0.transpose()*(peer.x0-self.x0);
 		x0_ps = peer.R0.transpose()*(self.x0-peer.x0);
-		A_s.block(0*N,0*N,3*N,3*N)  =  rho_u*kroneckerProduct(Snn,4.0*Matrix3d::Identity());
-		A_s.block(0*N,0*N,3*N,3*N) +=  beta_u*MatrixXd::Identity(3*N,3*N);
+		A_s.block(0*N,0*N,3*N,3*N)  =  rho_u*kroneckerProduct(Snn,4.0*Matrix3f::Identity());
+		A_s.block(0*N,0*N,3*N,3*N) +=  beta_u*MatrixXf::Identity(3*N,3*N);
 		A_s.block(3*N,3*N,3*N,3*N)  = -rho_u*kroneckerProduct(Snn,skewMat(x0_sp)*skewMat(x0_sp));
-		A_s.block(3*N,3*N,3*N,3*N) +=  beta_o*MatrixXd::Identity(3*N,3*N);
+		A_s.block(3*N,3*N,3*N,3*N) +=  beta_o*MatrixXf::Identity(3*N,3*N);
 	}
 	
 	void update_syn_pars () {
@@ -119,12 +119,12 @@ class manipulator_side : public manipulator {
 		set_tar_pars();
 		set_vis_pars();
 		set_cst_pars();
-		A_obj.block(6*N,6*N,12*N,12*N) = (kappa_f+rho_f)*MatrixXd::Identity(12*N,12*N);
+		A_obj.block(6*N,6*N,12*N,12*N) = (kappa_f+rho_f)*MatrixXf::Identity(12*N,12*N);
 	}
 	
 	void update_opt_pars () {
-		MatrixXd A = A_s;
-		VectorXd b = b_s;
+		MatrixXf A = A_s;
+		VectorXf b = b_s;
 		update_tar_pars();
 		if (mode!=0) {
 			A += A_d;
@@ -137,7 +137,7 @@ class manipulator_side : public manipulator {
 		}
 		A_obj.block(0*N,0*N, 6*N, 6*N) = A;
 		b_obj.segment(0*N, 6*N) = b;
-		b_obj.segment(6*N,12*N) = -rho_f*kroneckerProduct(MatrixXd::Ones(N,1),dt*MatrixXd(peer.f));
+		b_obj.segment(6*N,12*N) = -rho_f*kroneckerProduct(MatrixXf::Ones(N,1),dt*MatrixXf(peer.f));
 		update_cst_pars();
 	}
 

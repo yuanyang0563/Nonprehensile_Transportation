@@ -10,44 +10,44 @@ class manipulator {
 	vpImage<unsigned char> image;
 	vpCameraParameters cam;
 	vector<vector<vpImagePoint>> tagsCorners;
-	vector<double*> data;
+	vector<float*> data;
 	stringstream file_name;
 	bool file_init;
 
   public:
-  	VectorXd a, alpha, d;
-	VectorXd q, dq, f;
-	VectorXd b_d, b_v, eta, lambda, h;
-	MatrixXd A_d, A_v, J, Hu, Ho, Hf, Tu, To, L, Lu, Lo, Lm;
-	Vector3d upsilon, omega;
-	Vector3d xb, xeo, xec, xd, x, x0;
-	Matrix3d Rb, Reo, Rec, Rd, R, R0;
+  	VectorXf a, alpha, d;
+	VectorXf q, dq, f;
+	VectorXf b_d, b_v, eta, lambda, h;
+	MatrixXf A_d, A_v, J, Hu, Ho, Hf, Tu, To, L, Lu, Lo, Lm;
+	Vector3f upsilon, omega;
+	Vector3f xb, xeo, xec, xd, x, x0;
+	Matrix3f Rb, Reo, Rec, Rd, R, R0;
 	bool getJoints;
 	bool getImage;
 	vpDisplay *display;
 	vpDetectorAprilTag detector;
-	VectorXd zeta, zeta_d;
+	VectorXf zeta, zeta_d;
 	
 	manipulator (string name) {
-		a = VectorXd(6);
-		alpha = VectorXd(6);
-		d = VectorXd(6);
-		q = VectorXd(6);
-		dq = VectorXd(6);
-		f = VectorXd::Zero(12);
-		upsilon = Vector3d::Zero();
-		omega = Vector3d::Zero();
-		J = MatrixXd(6,6);
-		Hu = MatrixXd::Zero(6*N,3*N);
-		Ho = MatrixXd::Zero(6*N,3*N);
-		Hf = MatrixXd::Zero(6*N,12*N);
-		eta = VectorXd::Zero(3*N);
-		lambda = VectorXd::Zero(3*N);
-		h = VectorXd::Zero(6*N);
-		A_d = MatrixXd::Zero(6*N,6*N);
-		b_d = VectorXd::Zero(6*N);
-		A_v = MatrixXd::Zero(6*N,6*N);
-		b_v = VectorXd::Zero(6*N);
+		a = VectorXf(6);
+		alpha = VectorXf(6);
+		d = VectorXf(6);
+		q = VectorXf(6);
+		dq = VectorXf(6);
+		f = VectorXf::Zero(12);
+		upsilon = Vector3f::Zero();
+		omega = Vector3f::Zero();
+		J = MatrixXf(6,6);
+		Hu = MatrixXf::Zero(6*N,3*N);
+		Ho = MatrixXf::Zero(6*N,3*N);
+		Hf = MatrixXf::Zero(6*N,12*N);
+		eta = VectorXf::Zero(3*N);
+		lambda = VectorXf::Zero(3*N);
+		h = VectorXf::Zero(6*N);
+		A_d = MatrixXf::Zero(6*N,6*N);
+		b_d = VectorXf::Zero(6*N);
+		A_v = MatrixXf::Zero(6*N,6*N);
+		b_v = VectorXf::Zero(6*N);
 		pub_joint = nh.advertise<sensor_msgs::JointState>(name+"/joint_position",1);
 		joint_msg.position.resize(6);
 		getJoints = false;
@@ -57,14 +57,14 @@ class manipulator {
 		display = new vpDisplayX(image);
 		vpDisplay::setTitle(image, name+"_image");
 		cam.initPersProjWithoutDistortion(480,480,240,240);
-		Tu = MatrixXd::Zero(6,3);
-		To = MatrixXd::Zero(6,3);
-		L = MatrixXd::Zero(8,6);
-		Lu = MatrixXd::Zero(8,3);
-		Lo = MatrixXd::Zero(8,3);
-		Lm = MatrixXd::Zero(8,6);
-		zeta = VectorXd(8);
-		zeta_d = VectorXd(8);
+		Tu = MatrixXf::Zero(6,3);
+		To = MatrixXf::Zero(6,3);
+		L = MatrixXf::Zero(8,6);
+		Lu = MatrixXf::Zero(8,3);
+		Lo = MatrixXf::Zero(8,3);
+		Lm = MatrixXf::Zero(8,6);
+		zeta = VectorXf(8);
+		zeta_d = VectorXf(8);
 		data.resize(32);
 		for (size_t i=0; i<6; ++i)
 			data[i] = &q(i);
@@ -83,9 +83,9 @@ class manipulator {
 	}
 	
 	virtual void get_pose_jacobian () {
-		Matrix4d A;
-		MatrixXd T = Matrix4d::Identity();
-		Matrix<double, 3, 7> o, z;
+		Matrix4f A;
+		MatrixXf T = Matrix4f::Identity();
+		Matrix<float, 3, 7> o, z;
 		o.col(0) << 0.0, 0.0, 0.0;
 		z.col(0) << 0.0, 0.0, 1.0;
 		for (size_t i=0; i<6; ++i) {
@@ -118,7 +118,10 @@ class manipulator {
             		tagsCorners = detector.getTagsCorners();
             		if (tagsCorners[0].size()==4) {
 				for (size_t i=0; i<4; ++i) {
-            				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],zeta(2*i+0),zeta(2*i+1));
+					double u_i, v_i;
+            				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],u_i,v_i);
+            				zeta(2*i+0) = static_cast<float>(u_i);
+            				zeta(2*i+1) = static_cast<float>(v_i);
             				L.row(2*i+0) << -10.0,   0.0, 10.0*zeta(2*i+0), zeta(2*i+0)*zeta(2*i+1), -1.0-zeta(2*i+0)*zeta(2*i+0),  zeta(2*i+1);
             				L.row(2*i+1) <<   0.0, -10.0, 10.0*zeta(2*i+1), 1.0+zeta(2*i+1)*zeta(2*i+1), -zeta(2*i+0)*zeta(2*i+1), -zeta(2*i+0);
             			}
@@ -146,8 +149,8 @@ class manipulator {
 	}
 	
 	void set_tar_pars () {
-		A_d.block(0*N,0*N,3*N,3*N) = kappa_u*kroneckerProduct(Snn,Matrix3d::Identity())+alpha_u*MatrixXd::Identity(3*N,3*N);
-		A_d.block(3*N,3*N,3*N,3*N) = alpha_o*MatrixXd::Identity(3*N,3*N);
+		A_d.block(0*N,0*N,3*N,3*N) = kappa_u*kroneckerProduct(Snn,Matrix3f::Identity())+alpha_u*MatrixXf::Identity(3*N,3*N);
+		A_d.block(3*N,3*N,3*N,3*N) = alpha_o*MatrixXf::Identity(3*N,3*N);
 	}
 	
 	void update_tar_pars () {
@@ -173,25 +176,25 @@ class manipulator {
 	}
 	
 	void set_cst_pars () {
-		Hu.block(0*N,0*N,3*N, 3*N) =  kroneckerProduct(Gamma,m*Matrix3d::Identity());
+		Hu.block(0*N,0*N,3*N, 3*N) =  kroneckerProduct(Gamma,m*Matrix3f::Identity());
 		Ho.block(3*N,0*N,3*N, 3*N) = -kroneckerProduct(Gamma,I*Reo.transpose());
-		Hf.block(3*N,0*N,3*N,12*N) =  kroneckerProduct(MatrixXd::Identity(N,N),Go);
+		Hf.block(3*N,0*N,3*N,12*N) =  kroneckerProduct(MatrixXf::Identity(N,N),Go);
 	}
 	
 	void update_cst_pars () {
 		eta.head(3) = upsilon-R*xeo.cross(omega);
 		lambda.head(3) = I*Reo.transpose()*omega;
-		h.head(3*N) = m*eta-m*dt*kroneckerProduct(MatrixXd::Ones(N,1),R*skewMat(omega)*skewMat(omega)*xeo+g);
-		h.tail(3*N) = lambda-dt*kroneckerProduct(MatrixXd::Ones(N,1),skewMat(Reo.transpose()*omega)*I*Reo.transpose()*omega);
+		h.head(3*N) = m*eta-m*dt*kroneckerProduct(MatrixXf::Ones(N,1),R*skewMat(omega)*skewMat(omega)*xeo+g);
+		h.tail(3*N) = lambda-dt*kroneckerProduct(MatrixXf::Ones(N,1),skewMat(Reo.transpose()*omega)*I*Reo.transpose()*omega);
 		Ho.block(0*N,0*N,3*N, 3*N) = kroneckerProduct(Gamma,m*R*skewMat(xeo));
-		Hf.block(0*N,0*N,3*N,12*N) = kroneckerProduct(MatrixXd::Identity(N,N),R*Reo*Gu);
+		Hf.block(0*N,0*N,3*N,12*N) = kroneckerProduct(MatrixXf::Identity(N,N),R*Reo*Gu);
 	}
 	
-	inline double cost () {
+	inline float cost () {
 		return (xd-x).norm()-(Rd*R.transpose()).trace()+3.0;
 	}
 	
-	void store_data (double t_duration) {
+	void store_data (float t_duration) {
 		if (getImage) {
 			ofstream data_stream;
 			if (!file_init) {
@@ -201,7 +204,7 @@ class manipulator {
 				data_stream.open(file_name.str(),ios_base::app);
 			data_stream << setiosflags(ios::fixed) << setprecision(2) << ros::Time::now().toSec();
 			data_stream << ", " << setprecision(3) << t_duration;
-			vector<double*>::iterator it;
+			vector<float*>::iterator it;
 			for (it=data.begin(); it!=data.end(); ++it)
 				data_stream << ", " << setprecision(3) << **it;
 			data_stream << endl;

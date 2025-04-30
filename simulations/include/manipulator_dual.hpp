@@ -7,24 +7,24 @@ class manipulator_dual {
 	manipulator left;
 	manipulator right;
 	
-	MatrixXd A_obj, A_ls, A_rs, A_cs;
-	VectorXd b_obj, b_ls, b_rs;
+	MatrixXf A_obj, A_ls, A_rs, A_cs;
+	VectorXf b_obj, b_ls, b_rs;
 	
-	Vector3d x_lr, x0_lr, x_rl, x0_rl;
-	Matrix3d R_lr, R0_lr, R_rl, R0_rl;
+	Vector3f x_lr, x0_lr, x_rl, x0_rl;
+	Matrix3f R_lr, R0_lr, R_rl, R0_rl;
 	
-	double mode;
+	float mode;
 	
 	double uof_ub[24*N], uof_lb[24*N];
 	
-	manipulator_dual (string arm_left, string arm_right, double control_mode) : left(arm_left), right(arm_right), mode(control_mode) {
-		A_obj = MatrixXd::Zero(24*N,24*N);
-		b_obj = VectorXd::Zero(24*N);
-		A_ls = MatrixXd::Zero(6*N,6*N);
-		b_ls = VectorXd::Zero(6*N);
-		A_rs = MatrixXd::Zero(6*N,6*N);
-		b_rs = VectorXd::Zero(6*N);
-		A_cs = MatrixXd::Zero(6*N,6*N);
+	manipulator_dual (string arm_left, string arm_right, float control_mode) : left(arm_left), right(arm_right), mode(control_mode) {
+		A_obj = MatrixXf::Zero(24*N,24*N);
+		b_obj = VectorXf::Zero(24*N);
+		A_ls = MatrixXf::Zero(6*N,6*N);
+		b_ls = VectorXf::Zero(6*N);
+		A_rs = MatrixXf::Zero(6*N,6*N);
+		b_rs = VectorXf::Zero(6*N);
+		A_cs = MatrixXf::Zero(6*N,6*N);
 		left.display->setWindowPosition(0,0);
 		right.display->setWindowPosition(0,640);
 	}
@@ -62,15 +62,15 @@ class manipulator_dual {
 		R0_rl = right.R0.transpose()*left.R0;
 		x0_lr = left.R0.transpose()*(right.x0-left.x0);
 		x0_rl = right.R0.transpose()*(left.x0-right.x0);
-		A_ls.block(0*N,0*N,3*N,3*N)  =  rho_u*kroneckerProduct(Snn,4.0*Matrix3d::Identity());
-		A_ls.block(0*N,0*N,3*N,3*N) +=  beta_u*MatrixXd::Identity(3*N,3*N);
+		A_ls.block(0*N,0*N,3*N,3*N)  =  rho_u*kroneckerProduct(Snn,4.0*Matrix3f::Identity());
+		A_ls.block(0*N,0*N,3*N,3*N) +=  beta_u*MatrixXf::Identity(3*N,3*N);
 		A_ls.block(3*N,3*N,3*N,3*N)  = -rho_u*kroneckerProduct(Snn,skewMat(x0_lr)*skewMat(x0_lr));
-		A_ls.block(3*N,3*N,3*N,3*N) +=  beta_o*MatrixXd::Identity(3*N,3*N);
-		A_rs.block(0*N,0*N,3*N,3*N)  =  rho_u*kroneckerProduct(Snn,4.0*Matrix3d::Identity());
-		A_rs.block(0*N,0*N,3*N,3*N) +=  beta_u*MatrixXd::Identity(3*N,3*N);
+		A_ls.block(3*N,3*N,3*N,3*N) +=  beta_o*MatrixXf::Identity(3*N,3*N);
+		A_rs.block(0*N,0*N,3*N,3*N)  =  rho_u*kroneckerProduct(Snn,4.0*Matrix3f::Identity());
+		A_rs.block(0*N,0*N,3*N,3*N) +=  beta_u*MatrixXf::Identity(3*N,3*N);
 		A_rs.block(3*N,3*N,3*N,3*N)  = -rho_u*kroneckerProduct(Snn,skewMat(x0_rl)*skewMat(x0_rl));
-		A_rs.block(3*N,3*N,3*N,3*N) +=  beta_o*MatrixXd::Identity(3*N,3*N);
-		A_cs.block(0*N,0*N,3*N,3*N)  = -rho_u*kroneckerProduct(Snn,4.0*Matrix3d::Identity());
+		A_rs.block(3*N,3*N,3*N,3*N) +=  beta_o*MatrixXf::Identity(3*N,3*N);
+		A_cs.block(0*N,0*N,3*N,3*N)  = -rho_u*kroneckerProduct(Snn,4.0*Matrix3f::Identity());
 	}
 
 	void update_syn_pars () {
@@ -133,14 +133,14 @@ class manipulator_dual {
 		set_tar_pars();
 		set_vis_pars();
 		set_cst_pars();
-		A_obj.block(12*N,12*N,12*N,12*N) = kappa_f*MatrixXd::Identity(12*N,12*N);
+		A_obj.block(12*N,12*N,12*N,12*N) = kappa_f*MatrixXf::Identity(12*N,12*N);
 	}
 	
 	void update_opt_pars () {
-		MatrixXd A_l = A_ls;
-		MatrixXd A_r = A_rs;
-		VectorXd b_l = b_ls;
-		VectorXd b_r = b_rs;
+		MatrixXf A_l = A_ls;
+		MatrixXf A_r = A_rs;
+		VectorXf b_l = b_ls;
+		VectorXf b_r = b_rs;
 		update_tar_pars();
 		if (mode!=0.0) {
 			A_l += left.A_d;
@@ -164,12 +164,12 @@ class manipulator_dual {
 		update_cst_pars();
 	}
 	
-	void store_data (double t_duration) {
+	void store_data (float t_duration) {
 		left.store_data(t_duration);
 		right.store_data(t_duration);
 	}
 	
-	inline double cost () {
+	inline float cost () {
 		return left.cost()+right.cost();
 	}
 
