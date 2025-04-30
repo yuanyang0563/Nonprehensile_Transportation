@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 	// set ROS
 	ros::init(argc,argv,"mpc_right");
 	// set control mode
-	double mode;
+	float mode;
 	if (argc<2) {
 		cout << "Please set the control mode:" << endl;
 		cout << "0 for visual servoing." << endl;
@@ -111,11 +111,11 @@ int main(int argc, char *argv[])
 		arm.move_one_step();
 		// count the time spent and store data
 		auto t_stop = chrono::high_resolution_clock::now();
-    		auto t_duration = chrono::duration<double>(t_stop-t_start);
+    		auto t_duration = chrono::duration<float>(t_stop-t_start);
     		arm.store_data(t_duration.count());
     		// fix the time duration of each round
     		if (t_duration.count()<dt)
-    			this_thread::sleep_for(chrono::duration<double>(dt-t_duration.count()));
+    			this_thread::sleep_for(chrono::duration<float>(dt-t_duration.count()));
 	}
 	
 	return 0;
