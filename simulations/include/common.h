@@ -44,15 +44,15 @@ Vector3f r3(-0.075, 0.075,-0.075);
 Vector3f r4(-0.075,-0.075,-0.075);
 MatrixXf r(4,3);
 
-float dt = 0.033;
+float dt = 0.01;
 float vt = 1.0;
 float vr = 1.0;
 float fc = 1e5;
 float epsilon = 0.01;
 float kappa_u = 1.0;
-float alpha_u = 300.0;
+float alpha_u = 200.0;
 float kappa_o = 1.0;
-float alpha_o = 300.0;
+float alpha_o = 200.0;
 float rho_u = 0.1;
 float beta_u = 5.0;
 float rho_o = 0.1;
