@@ -17,6 +17,8 @@ class manipulator_dual {
 	
 	double uof_ub[24*N], uof_lb[24*N];
 	
+	bool getJoints, getImages;
+	
 	manipulator_dual (string arm_left, string arm_right, float control_mode) : left(arm_left), right(arm_right), mode(control_mode) {
 		A_obj = MatrixXf::Zero(24*N,24*N);
 		b_obj = VectorXf::Zero(24*N);
@@ -25,6 +27,8 @@ class manipulator_dual {
 		A_rs = MatrixXf::Zero(6*N,6*N);
 		b_rs = VectorXf::Zero(6*N);
 		A_cs = MatrixXf::Zero(6*N,6*N);
+		getJoints = false;
+		getImages = false;
 		left.display->setWindowPosition(0,0);
 		right.display->setWindowPosition(0,640);
 		if (mode==0.0) {
@@ -34,16 +38,13 @@ class manipulator_dual {
 	}
 
 	void get_pose_jacobian () {
-		bool getJoints = left.getJoints && right.getJoints;
-		if (!getJoints) {
-			left.get_pose_jacobian();
-			right.get_pose_jacobian();
+		getJoints = left.getJoints && right.getJoints;
+		left.get_pose_jacobian();
+		right.get_pose_jacobian();
+		if (!getJoints)
 			set_syn_pars();
-		} else {
-			left.get_pose_jacobian();
-			right.get_pose_jacobian();
+		else
 			update_syn_pars();
-		}
 	}
 	
 	void move_one_step () {
@@ -102,6 +103,7 @@ class manipulator_dual {
 	}
 	
 	void update_vis_pars () {
+		getImages = left.getImage && right.getImage;
 		left.update_vis_pars();
 		right.update_vis_pars();
 	}

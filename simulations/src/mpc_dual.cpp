@@ -33,26 +33,26 @@ int main(int argc, char *argv[])
 	arms.right.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
 	arms.right.d << 0.1519, 0.0, 0.0, 0.11235, 0.08535, 0.0819;
 	// set the initial joint coordinates of arms
-	arms.left.q <<  -M_PI, -1.0*M_PI/3.0,  M_PI/4.0, -5.0*M_PI/12.0, -M_PI/2.0,  M_PI/4.0;
-	arms.right.q << -M_PI, -2.0*M_PI/3.0, -M_PI/4.0, -7.0*M_PI/12.0,  M_PI/2.0, -M_PI/4.0;
+	arms.left.q << -M_PI, -M_PI/3.0, M_PI/4.0, -5.0*M_PI/12.0, -M_PI/2.0, M_PI/4.0;
+	arms.right.q << -M_PI, -2.0*M_PI/3.0, -M_PI/4.0, -7.0*M_PI/12.0, M_PI/2.0, -M_PI/4.0;
 	// set the object poses relative to the end-effector frames of arms
 	arms.left.xeo << 0.0, -0.2405, 0.025;
-	arms.left.Reo <<  1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
+	arms.left.Reo << 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
 	arms.right.xeo << 0.0, -0.2405, 0.025;
-	arms.right.Reo << -1.0, 0.0, 0.0, 0.0,  1.0, 0.0, 0.0, 0.0, -1.0;
+	arms.right.Reo << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0;
 	// set the poses of camera frames relative to tne end-effector frames of arms
 	arms.left.xec << 0.045, -0.02, 0.01;
 	arms.left.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
 	arms.right.xec << 0.045, -0.02, 0.01;
 	arms.right.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
 	// set the poses of arm bases
-	arms.left.xb <<  0, -0.44, 0.0;
+	arms.left.xb << 0, -0.44, 0.0;
 	arms.left.Rb << cos(3.0*M_PI/4.0), -sin(3.0*M_PI/4.0), 0.0, sin(3.0*M_PI/4.0), cos(3.0*M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
-	arms.right.xb << 0,  0.44, 0.0;
+	arms.right.xb << 0, 0.44, 0.0;
 	arms.right.Rb << cos(M_PI/4.0), -sin(M_PI/4.0), 0.0, sin(M_PI/4.0), cos(M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
 	// set the desired poses of arms
-	arms.left.xd <<  0.35, -0.2275, 0.20;
-	arms.left.Rd << 1.0,  0.0, 0.0,  0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
+	arms.left.xd << 0.35, -0.2275, 0.20;
+	arms.left.Rd << 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
 	arms.right.xd << 0.35, 0.2275, 0.20;
 	arms.right.Rd << -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0;
 	// set parameters for Gurobi to solve the problem
@@ -65,14 +65,9 @@ int main(int argc, char *argv[])
 		auto t_start = chrono::high_resolution_clock::now();
 		// get the current robot poses and Jacobians
 		arms.get_pose_jacobian();
-		// get the pose error and stops the simulation when the error is small enough
-		if (arms.cost()<1e-5) {
-			cout << "Target pose reached!" << endl;
-			break;
-		}
 		// update parameters for Gurobi to the solve the problem
 		arms.update_opt_pars();
-		if (arms.left.getImage && arms.right.getImage) {
+		if (arms.getImages) {
 			try {
 				// create a gurobi model and add optimization variables uof with lower and upper bounds
 				GRBModel model = GRBModel(env);

@@ -9,9 +9,12 @@ class manipulator_dual {
 
   	float mode;
   	
+  	bool getImages;
+  	
   	manipulator_dual (string arm_left, string arm_right, float control_mode) : left(arm_left), right(arm_right), mode(control_mode) {
   		left.display->setWindowPosition(0,0);
 		right.display->setWindowPosition(0,640);
+		getImages = false;
 		if (mode==0.0)
 			gamma_pid = 5.0;
   	}
@@ -32,6 +35,7 @@ class manipulator_dual {
 	}
 	
 	void update_vis_pars () {
+		getImages = left.getImage && right.getImage;
 		left.update_vis_pars();
 		right.update_vis_pars();
 	}

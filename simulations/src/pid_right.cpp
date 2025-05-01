@@ -46,11 +46,6 @@ int main(int argc, char *argv[])
 		auto t_start = chrono::high_resolution_clock::now();
 		// get the current robot pose and Jacobian
 		arm.get_pose_jacobian();
-		// get the pose error and stops the simulation when the error is small enough
-		if (arm.cost()<1e-5) {
-			cout << "Target pose reached!" << endl;
-			break;
-		}
 		// update parameters for visual seroving
 		arm.update_vis_pars();
 		if (arm.getImage && arm.getPeer)

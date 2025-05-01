@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 	arm.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
 	arm.d << 0.1519, 0.0, 0.0, 0.11235, 0.08535, 0.0819;
 	// set the initial joint coordinates of the arm
-	arm.q << -M_PI, -1.0*M_PI/3.0, M_PI/4.0, -5.0*M_PI/12.0, -M_PI/2.0,  M_PI/4.0;
+	arm.q << -M_PI, -M_PI/3.0, M_PI/4.0, -5.0*M_PI/12.0, -M_PI/2.0, M_PI/4.0;
 	// set the pose of camera frame relative to tne end-effector frame of the arm
 	arm.xec << 0.045, -0.02, 0.01;
 	arm.Rec << 1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0;
@@ -46,11 +46,6 @@ int main(int argc, char *argv[])
 		auto t_start = chrono::high_resolution_clock::now();
 		// get the current robot pose and Jacobian
 		arm.get_pose_jacobian();
-		// get the pose error and stops the simulation when the error is small enough
-		if (arm.cost()<1e-5) {
-			cout << "Target pose reached!" << endl;
-			break;
-		}
 		// update parameters for visual seroving
 		arm.update_vis_pars();
 		if (arm.getImage && arm.getPeer)
