@@ -1,5 +1,5 @@
 #include <gurobi_c++.h>
-#include "manipulator_dual.hpp"
+#include "mpc_dual.hpp"
 
 int main(int argc, char *argv[])
 {

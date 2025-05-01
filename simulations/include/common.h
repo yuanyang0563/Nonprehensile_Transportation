@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/JointState.h>
+#include <geometry_msgs/Pose.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
@@ -50,16 +51,19 @@ float vr = 1.0;
 float fc = 1e5;
 float epsilon = 0.01;
 float kappa_u = 1.0;
-float alpha_u = 200.0;
-float kappa_o = 1.0;
-float alpha_o = 200.0;
-float rho_u = 0.1;
-float beta_u = 5.0;
-float rho_o = 0.1;
-float beta_o = 5.0;
+float alpha_u = 50.0;
+float kappa_o = 0.1;
+float alpha_o = 10.0;
+float rho_u = 1.0;
+float beta_u = 50.0;
+float rho_o = 1.0;
+float beta_o = 50.0;
 float gamma_v = 0.05;
 float kappa_f = 0.1;
 float rho_f = 3.0;
+float kappa_pid = 1.0;
+float rho_pid = 5.0;
+float gamma_pid = 0.5;
 
 Matrix3f skewMat (const Vector3f& w);
 Vector3f skewVec (const Matrix3f& M);

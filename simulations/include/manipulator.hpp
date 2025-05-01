@@ -117,19 +117,18 @@ class manipulator {
             		detector.detect(image);
             		tagsCorners = detector.getTagsCorners();
             		if (tagsCorners[0].size()==4) {
-				for (size_t i=0; i<4; ++i) {
-					double u_i, v_i;
-            				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],u_i,v_i);
-            				zeta(2*i+0) = static_cast<float>(u_i);
-            				zeta(2*i+1) = static_cast<float>(v_i);
+            			VectorXd feature(8);
+				for (size_t i=0; i<4; ++i)
+            				vpPixelMeterConversion::convertPoint(cam,tagsCorners[0][i],feature(2*i+0),feature(2*i+1));
+            			zeta = feature.cast<float>();
+            			if (!getImage) {
+            				zeta_d = zeta;
+            				getImage = !getImage;
+            			}
+            			for (size_t i=0; i<4; ++i) {
             				L.row(2*i+0) << -10.0,   0.0, 10.0*zeta(2*i+0), zeta(2*i+0)*zeta(2*i+1), -1.0-zeta(2*i+0)*zeta(2*i+0),  zeta(2*i+1);
             				L.row(2*i+1) <<   0.0, -10.0, 10.0*zeta(2*i+1), 1.0+zeta(2*i+1)*zeta(2*i+1), -zeta(2*i+0)*zeta(2*i+1), -zeta(2*i+0);
             			}
-            			if (!getImage)
-            				zeta_d = zeta;
-            			getImage = true;
-            		} else {
-            			getImage = false;
             		}
 			vpDisplay::display(image);
 			vpDisplay::flush(image);
@@ -203,7 +202,7 @@ class manipulator {
 			} else
 				data_stream.open(file_name.str(),ios_base::app);
 			data_stream << setiosflags(ios::fixed) << setprecision(2) << ros::Time::now().toSec();
-			data_stream << ", " << setprecision(3) << t_duration;
+			data_stream << ", " << setprecision(4) << t_duration;
 			vector<float*>::iterator it;
 			for (it=data.begin(); it!=data.end(); ++it)
 				data_stream << ", " << setprecision(3) << **it;

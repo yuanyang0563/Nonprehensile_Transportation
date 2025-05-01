@@ -1,5 +1,5 @@
 #include <gurobi_c++.h>
-#include "manipulator_side.hpp"
+#include "mpc_side.hpp"
 
 int main(int argc, char *argv[])
 {
