@@ -46,10 +46,10 @@ int main(int argc, char *argv[])
 	arms.right.xb << 0.0, 0.44, 0.0;
 	arms.right.Rb << cos(M_PI/4.0), -sin(M_PI/4.0), 0.0, sin(M_PI/4.0), cos(M_PI/4.0), 0.0, 0.0, 0.0, 1.0;
 	// set the desired poses of arms
-	arms.left.xd << 0.4008, -0.1000, 0.15;
-	arms.left.Rd << cos(M_PI/4.0), sin(M_PI/4.0), 0.0, sin(M_PI/4.0), -cos(M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
-	arms.right.xd << 0.1392, 0.1616, 0.15;
-	arms.right.Rd << cos(M_PI/4.0), sin(M_PI/4.0), 0.0, sin(M_PI/4.0), -cos(M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
+	arms.left.xd << 0.1392, -0.1616, 0.15;
+	arms.left.Rd << cos(-M_PI/4.0), sin(-M_PI/4.0), 0.0, sin(-M_PI/4.0), -cos(-M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
+	arms.right.xd << 0.4008, 0.1000, 0.15;
+	arms.right.Rd << cos(-M_PI/4.0), sin(-M_PI/4.0), 0.0, sin(-M_PI/4.0), -cos(-M_PI/4.0), 0.0, 0.0, 0.0, -1.0;
 	// set parameters for Gurobi to solve the problem
 	arms.set_opt_pars();
 	// call Gurobi to perform optimal control
@@ -63,10 +63,6 @@ int main(int argc, char *argv[])
 		// update parameters for Gurobi to the solve the problem
 		arms.update_opt_pars();
 		if (arms.getJoints && arms.getFeatures) {
-			if (!arms.isInitialized) {
-				this_thread::sleep_for(chrono::seconds(5));
-				arms.isInitialized = true;
-			}
 			try {
 				// create a gurobi model and add optimization variables uof with lower and upper bounds
 				GRBModel model = GRBModel(env);

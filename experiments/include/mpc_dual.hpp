@@ -17,7 +17,7 @@ class manipulator_dual {
 	
 	double uof_ub[24*N], uof_lb[24*N];
 	
-	bool getJoints, getFeatures, setSynpars, isInitialized;
+	bool getJoints, getFeatures, setSynpars;
 	
 	manipulator_dual (string arm_left, string arm_right, float control_mode) : left(arm_left), right(arm_right), mode(control_mode) {
 		A_obj = MatrixXf::Zero(24*N,24*N);
@@ -30,7 +30,6 @@ class manipulator_dual {
 		getJoints = false;
 		getFeatures = false;
 		setSynpars = false;
-		isInitialized = false;
 		if (mode==0.0) {
 			gamma_v = 5.0;
 			kappa_f = 0.0;
@@ -57,11 +56,8 @@ class manipulator_dual {
 	}
 	
 	void stop_moving () {
-		left.upsilon.setZero();
-		left.omega.setZero();
-		right.upsilon.setZero();
-		right.omega.setZero();
-		move_one_step();
+		left.stop_moving();
+		right.stop_moving();
 	}
 	
 	void set_tar_pars () {

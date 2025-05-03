@@ -23,3 +23,9 @@ include_directories(${catkin_INCLUDE_DIRS})
 
 add_executable(mpc_dual src/mpc_dual.cpp)
 target_link_libraries(mpc_dual ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES} optimized ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
+
+add_executable(mpc_left src/mpc_left.cpp)
+target_link_libraries(mpc_left ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES} optimized ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
+
+add_executable(mpc_right src/mpc_right.cpp)
+target_link_libraries(mpc_right ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES} optimized ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})

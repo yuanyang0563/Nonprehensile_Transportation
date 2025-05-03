@@ -92,7 +92,7 @@ class manipulator {
 		for (size_t i=0; i<6; ++i)
 			J.col(i)<< Rb*z.col(i).cross(o.col(6)-o.col(i)), R.transpose()*Rb*z.col(i);
 	}
-	
+
 	void feature_callback(const std_msgs::Float64MultiArray::ConstPtr& msg) {
 		zeta << msg->data[0], msg->data[1], msg->data[2], msg->data[3], msg->data[4], msg->data[5], msg->data[6], msg->data[7];
 		if (getFeatures) {
@@ -129,6 +129,12 @@ class manipulator {
 			jv_msg.data[i] = dq(i);
 		pub_jv.publish(jv_msg);
 		ros::spinOnce();
+	}
+	
+	void stop_moving () {
+		upsilon.setZero();
+		omega.setZero();
+		move_one_step();
 	}
 	
 	void set_tar_pars () {
@@ -172,7 +178,7 @@ class manipulator {
 		Ho.block(0*N,0*N,3*N, 3*N) = kroneckerProduct(Gamma,m*R*skewMat(xeo));
 		Hf.block(0*N,0*N,3*N,12*N) = kroneckerProduct(MatrixXf::Identity(N,N),R*Reo*Gu);
 	}
-	
+
 	void store_data (float t_duration) {
 		if (getJoints && getFeatures) {
 			ofstream data_stream;
