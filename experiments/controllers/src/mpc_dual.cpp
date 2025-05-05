@@ -31,9 +31,9 @@ int main(int argc, char *argv[])
 	arms.right.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
 	arms.right.d << 0.15185, 0.0, 0.0, 0.13105, 0.08535, 0.0921;
 	// set the object poses relative to the end-effector frames of arms
-	arms.left.xeo << 0.0, -0.20, -0.05;
+	arms.left.xeo << 0.0, -0.185, 0.05;
 	arms.left.Reo << 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
-	arms.right.xeo << 0.0, 0.20, -0.05;
+	arms.right.xeo << 0.0, 0.185, 0.05;
 	arms.right.Reo << 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
 	// set the poses of camera frames relative to tne end-effector frames of arms
 	arms.left.xec << 0.035, 0.050, -0.075;
