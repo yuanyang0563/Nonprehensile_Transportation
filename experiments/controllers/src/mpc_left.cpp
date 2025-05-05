@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	arm.alpha << M_PI/2.0, 0.0, 0.0, M_PI/2.0, -M_PI/2.0, 0.0;
 	arm.d << 0.1519, 0.0, 0.0, 0.11235, 0.08535, 0.0819;
 	// set the object pose relative to the end-effector frame of the arm
-	arm.xeo << 0.0, -0.20, -0.05;
+	arm.xeo << 0.0, -0.185, 0.05;
 	arm.Reo << 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0;
 	// set the pose of camera frame relative to tne end-effector frame of the arm
 	arm.xec << 0.035, 0.050, -0.075;
