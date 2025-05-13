@@ -8,7 +8,7 @@ This project implements model predictive control algorithms for a single-arm sys
 
 The proposed control algorithms are computationally efficient.
 
-Tested on computers that have 12th Gen Intel Core i7-12700*20 and install Ubuntu 20.04 LTS with PREEMPT_RT kernel. The commuations and control are within ROS Noetic.
+Tested on computers that have 12th Gen Intel Core i7-12700*20 @ 2.1GHz and install Ubuntu 20.04 LTS with PREEMPT_RT kernel. The commuations and control are within ROS Noetic.
 
 The length of the prediction horizon is set to $N=5$.
 
