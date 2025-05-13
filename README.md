@@ -4,11 +4,11 @@
 
 This project implements model predictive control algorithms for a single-arm system and a dual-arm system to perform nonprehensile transportation of a box payload.
 
-The principles of the model predictive control algorithms are explained here: <a href="https://www.overleaf.com/read/svsbmbmrbbzt#efa959" target="_blank">Enjoy it!</a>.
-
 ## Features
 
 The proposed control algorithms are computationally efficient.
+
+Tested on computers that have 12th Gen Intel Core i7-12700*20 and install Ubuntu 20.04 LTS with PREEMPT_RT kernel. The commuations and control are within ROS Noetic.
 
 The length of the prediction horizon is set to $N=5$.
 
