@@ -10,7 +10,7 @@ The proposed control algorithms are computationally efficient.
 
 Tested on desktop computers that have Intel Core i7-12700 (12 cores, 20 threads, base frequency 2.1GHz) and run Ubuntu 20.04 LTS with PREEMPT_RT kernel.
 
-The length of the prediction horizon is set to $N=5$. The average computation time required per control cycle are 8.37 ms (centralized) and 5.40 ms (distributed).
+The length of the prediction horizon is set to $N=5$. The average computation time required per control cycle are $8.37$ ms (centralized) and $5.40$ ms (distributed).
 
 ## Installation
 
