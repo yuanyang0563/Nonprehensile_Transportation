@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(nonprehensile_mpc)
+project(nonprehensile_transportation)
 
 option(CXX "enable C++ compilation" ON)
 enable_language(CXX)
@@ -21,14 +21,14 @@ include_directories(${VISP_INCLUDE_DIRS})
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs sensor_msgs geometry_msgs)
 include_directories(${catkin_INCLUDE_DIRS})
 
-add_executable(pid_dual src/pid_dual.cpp)
-target_link_libraries(pid_dual ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES})
+add_executable(pbc_dual src/pbc_dual.cpp)
+target_link_libraries(pbc_dual ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable(pid_left src/pid_left.cpp)
-target_link_libraries(pid_left ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES})
+add_executable(pbc_left src/pbc_left.cpp)
+target_link_libraries(pbc_left ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable(pid_right src/pid_right.cpp)
-target_link_libraries(pid_right ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES})
+add_executable(pbc_right src/pbc_right.cpp)
+target_link_libraries(pbc_right ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(mpc_dual src/mpc_dual.cpp)
 target_link_libraries(mpc_dual ${Boost_LIBRARIES} ${VISP_LIBRARIES} ${catkin_LIBRARIES} optimized ${GUROBI_CXX_LIBRARY} ${GUROBI_LIBRARY})
