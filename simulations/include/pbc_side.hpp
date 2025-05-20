@@ -22,7 +22,7 @@ class manipulator_side : public manipulator {
 		sub_peer = nh.subscribe(name_peer+"/pose",1,&manipulator_side::peer_callback,this);
 		getPeer = false;
 		if (mode==0.0)
-			gamma_pid = 5.0;
+			gamma_pbc = 5.0;
 	}
 	
 	void get_pose_jacobian () override {
@@ -58,11 +58,11 @@ class manipulator_side : public manipulator {
 	}
 	
 	void get_vel_input () {
-		Vector3f upsilon_d = kappa_pid*(xd-x);
-		Vector3f omega_d = kappa_pid*R.transpose()*skewVec(Rd*R.transpose());
-		Vector3f upsilon_s = rho_pid*(peer.x-self.x-0.5*(self.R*self.R0.transpose()+peer.R*peer.R0.transpose())*(peer.x0-self.x0));
-		Vector3f omega_s = rho_pid*self.R.transpose()*skewVec(peer.R*peer.R0.transpose()*self.R0*self.R.transpose());
-		VectorXf twist_v = gamma_pid*(Lm.transpose()*Lm).inverse()*Lm.transpose()*(zeta_d-zeta);
+		Vector3f upsilon_d = kappa_pbc*(xd-x);
+		Vector3f omega_d = kappa_pbc*R.transpose()*skewVec(Rd*R.transpose());
+		Vector3f upsilon_s = rho_pbc*(peer.x-self.x-0.5*(self.R*self.R0.transpose()+peer.R*peer.R0.transpose())*(peer.x0-self.x0));
+		Vector3f omega_s = rho_pbc*self.R.transpose()*skewVec(peer.R*peer.R0.transpose()*self.R0*self.R.transpose());
+		VectorXf twist_v = gamma_pbc*(Lm.transpose()*Lm).inverse()*Lm.transpose()*(zeta_d-zeta);
 		upsilon = upsilon_s;
 		omega = omega_s;
 		if (mode!=0) {
