@@ -62,9 +62,9 @@ float beta_o = 50.0;
 float gamma_v = 0.05;
 float kappa_f = 0.5;
 float rho_f = 2.0;
-float kappa_pid = 1.0;
-float rho_pid = 5.0;
-float gamma_pid = 0.5;
+float kappa_pbc = 1.0;
+float rho_pbc = 5.0;
+float gamma_pbc = 0.5;
 
 Matrix3f skewMat (const Vector3f& w);
 Vector3f skewVec (const Matrix3f& M);
