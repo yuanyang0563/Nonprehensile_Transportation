@@ -20,7 +20,7 @@ Install the Robot Operating System Noetic.
 
 Install the Viual Servoing Platform (ViSP). 
 
-Install CoppeliaSim (for simulations only) and UR ROS Driver (for experiments only).
+Install CoppeliaSim (for simulations only) and Universal_Robots_ROS_Driver (for experiments only).
 
 To install the project, run the following commands in your terminal:
 
