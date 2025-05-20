@@ -1,10 +1,10 @@
-#include "pid_dual.hpp"
+#include "pbc_dual.hpp"
 
 int main(int argc, char *argv[])
 {
 	init();
 	// set ROS
-	ros::init(argc,argv,"pid_dual");
+	ros::init(argc,argv,"pbc_dual");
 	// set control mode
 	float mode;
 	if (argc<2) {
