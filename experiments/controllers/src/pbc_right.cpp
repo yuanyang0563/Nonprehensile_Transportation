@@ -1,10 +1,10 @@
-#include "pid_side.hpp"
+#include "pbc_side.hpp"
 
 int main(int argc, char *argv[])
 {
 	init();
 	// set ROS
-	ros::init(argc,argv,"pid_right");
+	ros::init(argc,argv,"pbc_right");
 	// set control mode
 	float mode;
 	if (argc<2) {
