@@ -32,6 +32,7 @@ cd Nonprehensile_Transportation
 # make a directory and navigate into it
 mkdir build && cd build
 # build the project
+ccmake ..  # type c twice and g once
 cmake ..
 make
 
