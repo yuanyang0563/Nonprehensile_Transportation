@@ -2,25 +2,25 @@
 
 ## Introduction
 
-This project implements model predictive control algorithms for a single-arm system and a dual-arm system to perform nonprehensile transportation of a box payload.
+This project implements model predictive control algorithms for distributed dual-arm nonprehensile object transportation.
 
 ## Features
 
 The proposed control algorithms are computationally efficient.
 
-Tested on computers that have 12th Gen Intel Core i7-12700*20 @ 2.1GHz and install Ubuntu 20.04 LTS with PREEMPT_RT kernel. The commuations and control are within ROS Noetic.
+Tested on desktop computers that have Intel Core i7-12700 (12 cores, 20 threads, base frequency 2.1GHz) and run Ubuntu 20.04 LTS with PREEMPT_RT kernel.
 
-The length of the prediction horizon is set to $N=5$.
-
-In sumulations, only $7~ms$ on average are spent in solving the formulated optimization problems per round. Check it!
-
-In experiments, the maximum time spent in computing the conventional controls and the predictive controls are 0.12 seconds and 0.32 seconds per round. 
+The length of the prediction horizon is set to $N=5$. The average computation time required per control cycle are 8.37 ms (centralized) and 5.40 ms (distributed).
 
 ## Installation
 
-Installed **Gurobi 12.0**. Check ~/.bashrc and export environment variables **GUROBI_HOME**, **PATH** and **LD_LIBRARY_PATH** correctly.
+Install Gurobi 12.0.
 
-Install the **cppzmq** package for the program to interface with the CoppeliaSim via the ZeroMQ remote API.
+Install the Robot Operating System Noetic.
+
+Install the Viual Servoing Platform (ViSP). 
+
+Install CoppeliaSim (for simulations only) and UR ROS Driver (for experiments only).
 
 To install the project, run the following commands in your terminal:
 
