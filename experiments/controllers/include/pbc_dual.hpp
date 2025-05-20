@@ -15,7 +15,7 @@ class manipulator_dual {
 		getJoints = false;
 		getFeatures = false;
 		if (mode==0.0)
-			gamma_pid = 5.0;
+			gamma_pbc = 5.0;
   	}
   	
   	void get_pose_jacobian () {
@@ -48,16 +48,16 @@ class manipulator_dual {
 	}
 	
 	void get_vel_inputs () {
-		Vector3f upsilon_ld = kappa_pid*(left.xd-left.x);
-		Vector3f upsilon_rd = kappa_pid*(right.xd-right.x);
-		Vector3f omega_ld = kappa_pid*left.R.transpose()*skewVec(left.Rd*left.R.transpose());
-		Vector3f omega_rd = kappa_pid*right.R.transpose()*skewVec(right.Rd*right.R.transpose());
-		Vector3f upsilon_ls = rho_pid*(right.x-left.x-0.5*(left.R*left.R0.transpose()+right.R*right.R0.transpose())*(right.x0-left.x0));
-		Vector3f upsilon_rs = rho_pid*(left.x-right.x-0.5*(right.R*right.R0.transpose()+left.R*left.R0.transpose())*(left.x0-right.x0));
-		Vector3f omega_ls = rho_pid*left.R.transpose()*skewVec(right.R*right.R0.transpose()*left.R0*left.R.transpose());
-		Vector3f omega_rs = rho_pid*right.R.transpose()*skewVec(left.R*left.R0.transpose()*right.R0*right.R.transpose());
-		VectorXf twist_lv = gamma_pid*(left.Lm.transpose()*left.Lm).inverse()*left.Lm.transpose()*(left.zeta_d-left.zeta);
-		VectorXf twist_rv = gamma_pid*(right.Lm.transpose()*right.Lm).inverse()*right.Lm.transpose()*(right.zeta_d-right.zeta);
+		Vector3f upsilon_ld = kappa_pbc*(left.xd-left.x);
+		Vector3f upsilon_rd = kappa_pbc*(right.xd-right.x);
+		Vector3f omega_ld = kappa_pbc*left.R.transpose()*skewVec(left.Rd*left.R.transpose());
+		Vector3f omega_rd = kappa_pbc*right.R.transpose()*skewVec(right.Rd*right.R.transpose());
+		Vector3f upsilon_ls = rho_pbc*(right.x-left.x-0.5*(left.R*left.R0.transpose()+right.R*right.R0.transpose())*(right.x0-left.x0));
+		Vector3f upsilon_rs = rho_pbc*(left.x-right.x-0.5*(right.R*right.R0.transpose()+left.R*left.R0.transpose())*(left.x0-right.x0));
+		Vector3f omega_ls = rho_pbc*left.R.transpose()*skewVec(right.R*right.R0.transpose()*left.R0*left.R.transpose());
+		Vector3f omega_rs = rho_pbc*right.R.transpose()*skewVec(left.R*left.R0.transpose()*right.R0*right.R.transpose());
+		VectorXf twist_lv = gamma_pbc*(left.Lm.transpose()*left.Lm).inverse()*left.Lm.transpose()*(left.zeta_d-left.zeta);
+		VectorXf twist_rv = gamma_pbc*(right.Lm.transpose()*right.Lm).inverse()*right.Lm.transpose()*(right.zeta_d-right.zeta);
 		left.upsilon = upsilon_ls;
 		left.omega = omega_ls;
 		right.upsilon = upsilon_rs;
