@@ -25,17 +25,19 @@ Install CoppeliaSim (for simulations only) and UR ROS Driver (for experiments on
 To install the project, run the following commands in your terminal:
 
 ```bash
-# clone the repository
+
 git clone https://github.com/yuanyang0563/Nonprehensile_Transportation.git
-# navigate into the project directory
-cd Nonprehensile_Transportation
-# make a directory and navigate into it
+
+cd Nonprehensile_Transportation/simulations 
 mkdir build && cd build
-# build the project
+ccmake ..  # type c twice and g once
+cmake ..
+make
+
+cd Nonprehensile_Transportation/experiments/***
+mkdir build && cd build
 ccmake ..  # type c twice and g once
 cmake ..
 make
 
 ```
-
-## Usage
